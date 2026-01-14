@@ -1,0 +1,264 @@
+body {
+    background: radial-gradient(circle at top, #0f4c5c, #062c36);
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+}
+
+/* ===== SECTION CARD ===== */
+.section-card {
+    background: rgba(255,255,255,0.06);
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
+}
+
+/* ===== LIGA ===== */
+.liga-card img {
+    width: 120px;
+}
+.liga-card h5 {
+    margin-top: 15px;
+    font-weight: bold;
+}
+.liga-range {
+    background: #0b3a45;
+    border-radius: 20px;
+    padding: 6px 16px;
+    display: inline-block;
+    font-size: 14px;
+}
+
+/* ===== PROGRESS ===== */
+.progress {
+    height: 14px;
+    border-radius: 20px;
+    background: #0b3a45;
+}
+.progress-bar {
+    background: linear-gradient(90deg, #f9d423, #ff9f1c);
+}
+
+/* ===== TABLE ===== */
+.table {
+    color: #fff;
+}
+.table thead {
+    background: rgba(255,255,255,0.15);
+}
+.table tbody tr:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+/* ===== PRIZE CARD ===== */
+.prize-card {
+    background: linear-gradient(
+        180deg,
+        rgba(255,255,255,0.12),
+        rgba(255,255,255,0.05)
+    );
+    border-radius: 22px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 12px 25px rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: .3s ease;
+    
+    /* animation base */
+    opacity: 0;
+    transform: translateY(40px);
+}
+
+.prize-card.animate {
+    animation: fadeUp 0.6s ease forwards;
+}
+
+.prize-card:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Image box */
+.prize-image {
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 14px;
+}
+.prize-image img {
+    height: 120px;
+    object-fit: contain;
+}
+
+/* Text */
+.prize-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+.prize-meta {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* Point badge */
+.point-badge {
+    background: linear-gradient(90deg, #f9d423, #ff9f1c);
+    color: #000;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.table-scroll {
+    max-height: 450px; /* tinggi area scroll */
+    overflow-y: auto;
+    border-radius: 12px;
+}
+
+/* sticky header */
+.table-scroll thead th {
+    position: sticky;
+    top: 0;
+    /* background: #111; */
+    z-index: 10;
+}
+
+.table-glass {
+    border-radius: 12px;
+    overflow: hidden; /* KUNCI */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Table basic */
+.table-transparent {
+    color: #fff;
+}
+
+/* Header */
+.table-transparent thead th {
+    background: color-mix(in srgb, var(--liga-color) 25%, transparent);
+    /* color: #fff; */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* Body cell */
+.table-transparent tbody td {
+    background: transparent;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Vertical border inside */
+.table-transparent th,
+.table-transparent td {
+    color: #fff;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.table-transparent th:last-child,
+.table-transparent td:last-child {
+    border-right: none;
+}
+
+/* Hover */
+.table-transparent tbody tr:hover {
+    
+    background: color-mix(in srgb, var(--liga-color) 15%, transparent);
+    /* background: rgba(255, 255, 255, 0.08); */
+}
+
+/* Badge tweak biar kontras */
+.badge {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+}
+.badge-liga {
+    background: var(--liga-color);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+}
+.liga-rookie {
+    --liga-color: #6c757d;
+}
+
+.liga-champion {
+    --liga-color: #198754;
+}
+.liga-rising {
+    --liga-color: #0dcaf0;
+}
+
+
+.progress-bar {
+    background: linear-gradient(90deg,  #f9d423, #ff9f1c);
+    transition: width 1.2s ease-in-out;
+    border-radius: 20px;
+}
+
+/* Initial hidden state */
+.animate-left,
+.animate-right {
+    opacity: 0;
+}
+
+/* Active animations */
+.animate-left.show {
+    animation: slideFromLeft 0.6s ease-out forwards;
+}
+
+.animate-right.show {
+    animation: slideFromRight 0.6s ease-out forwards;
+}
+
+/* Keyframes */
+@keyframes slideFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+.reward-link:hover {
+  text-decoration: underline !important;  /* underline on hover */
+}
+
+.reward-link {
+  text-decoration: none;   /* no underline initially */
+  font-weight: normal;     /* normal weight */
+  cursor: pointer;         /* optional, changes cursor to pointer */
+}
