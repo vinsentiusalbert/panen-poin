@@ -78,6 +78,7 @@ class PanenPoinController extends Controller
             $user = auth()->user();
             \Log::info('Starting calculatePanenPoinData...');
             $data = $this->calculatePanenPoinData($request->tanggal);
+            $prizes = Prize::orderBy('point', 'desc')->get();
             if ($user) {
             $point = DB::table('summary_panen_poin')
                 ->select(
@@ -95,7 +96,7 @@ class PanenPoinController extends Controller
                 $point = 0;
             }
                 // dd($point);
-            return view('reward.index', compact('data', 'point'));
+            return view('reward.index', compact('data', 'point','prizes'));
                 
         } catch (\Exception $e) {
             \Log::error("Error in getReportData: " . $e->getMessage());
