@@ -419,7 +419,7 @@ body {
                 @elseif ($outOfStock)
                     Habis
                 @elseif ($notEnoughPoint)
-                    Poin Tidak Cukup
+                    Redeem
                 @else
                     Redeem
                 @endif
