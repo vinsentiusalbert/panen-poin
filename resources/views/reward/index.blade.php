@@ -62,7 +62,7 @@ body {
 
 {{-- ================= TABLE ================= --}}
 <div class="section-card mb-5">
-    <h4 class="mb-3">Reporting Rookie</h4>
+    <h4 class="mb-3">TOP 10 Rookie</h4>
 
     {{-- <div class="table-responsive table-scroll"> --}}
     <div>
@@ -148,7 +148,7 @@ body {
 </div>
 
 <div class="section-card mb-5">
-    <h4 class="mb-3">Reporting Rising Star</h4>
+    <h4 class="mb-3">TOP 10 Rising Star</h4>
 
     <div class="">
         <div class="row">
@@ -233,7 +233,7 @@ body {
 </div>
 
 <div class="section-card mb-5">
-    <h4 class="mb-3">Reporting Champion</h4>
+    <h4 class="mb-3">TOP 10 Champion</h4>
 
     <div class="">
         <div class="row">
