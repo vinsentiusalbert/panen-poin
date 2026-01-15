@@ -64,16 +64,15 @@ body {
 <div class="section-card mb-5">
     <h4 class="mb-3">TOP 10 Rookie</h4>
 
-    {{-- <div class="table-responsive table-scroll"> --}}
-    <div>
+    <div class="">
         <div class="row">
-            <div class="col-md-3 liga-card text-center animate-left scroll-animate">
-                <img src="{{ asset('img/rookie.png') }}">
-                <h5>Rookie</h5>
-                <span class="liga-range">0 – 100 Poin</span>
+            <div class="col-md-3 liga-card text-center animate-left scroll-animate my-2">
+                <img src="{{ asset('img/champion.png') }}">
+                <h5>Champion</h5>
+                <span class="liga-range">201 – 300 Poin</span>
             </div>
             <div class="col-md-9">
-                <div class="table-glass liga-rookie animate-right scroll-animate">
+                <div class="table-glass liga-champion animate-right scroll-animate">
                     <table class="table table-transparent align-middle mb-0">
                     <thead>
                         <tr>
@@ -86,7 +85,7 @@ body {
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($data['poin_0_100'] as $index => $row)
+                        @forelse ($data['poin_201_300'] as $index => $row)
 
                             @php
                                 // Tentukan kategori liga
@@ -147,12 +146,13 @@ body {
     </div>
 </div>
 
+
 <div class="section-card mb-5">
     <h4 class="mb-3">TOP 10 Rising Star</h4>
 
     <div class="">
         <div class="row">
-            <div class="col-md-3 liga-card text-center animate-left scroll-animate">
+            <div class="col-md-3 liga-card text-center animate-left scroll-animate my-2">
                 <img src="{{ asset('img/rising_star.png') }}">
                 <h5>Rising Star</h5>
                 <span class="liga-range">101 – 200 Poin</span>
@@ -235,15 +235,16 @@ body {
 <div class="section-card mb-5">
     <h4 class="mb-3">TOP 10 Champion</h4>
 
-    <div class="">
+    {{-- <div class="table-responsive table-scroll"> --}}
+    <div>
         <div class="row">
-            <div class="col-md-3 liga-card text-center animate-left scroll-animate">
-                <img src="{{ asset('img/champion.png') }}">
-                <h5>Champion</h5>
-                <span class="liga-range">201 – 300 Poin</span>
+            <div class="col-md-3 liga-card text-center animate-left scroll-animate my-2">
+                <img src="{{ asset('img/rookie.png') }}">
+                <h5>Rookie</h5>
+                <span class="liga-range">0 – 100 Poin</span>
             </div>
             <div class="col-md-9">
-                <div class="table-glass liga-champion animate-right scroll-animate">
+                <div class="table-glass liga-rookie animate-right scroll-animate">
                     <table class="table table-transparent align-middle mb-0">
                     <thead>
                         <tr>
@@ -256,7 +257,7 @@ body {
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($data['poin_201_300'] as $index => $row)
+                        @forelse ($data['poin_0_100'] as $index => $row)
 
                             @php
                                 // Tentukan kategori liga
@@ -317,42 +318,45 @@ body {
     </div>
 </div>
 
+
+
 {{-- ================= PRIZE ================= --}}
 <div class="section-card" id="prizes">
     <h4 class="mb-4">Hadiah yang Bisa Diredeem</h4>
 
     <div class="row g-4 prize-wrapper">
-        @php
-            $prizes = [
-                ['img'=>'iphone.png','name'=>'iPhone 17','point'=>300,'stock'=>1],
-                ['img'=>'tv.png','name'=>'Smart TV Xiaomi','point'=>282,'stock'=>1],
-                ['img'=>'garmin.png','name'=>'Garmin Venu X1','point'=>146,'stock'=>1],
-                ['img'=>'emas.png','name'=>'Logam Mulia 2 Gram','point'=>128,'stock'=>2],
-                ['img'=>'galaxy_buds.png','name'=>'Galaxy Buds','point'=>66,'stock'=>2],
-                ['img'=>'tumblr.png','name'=>'Stanley Tumbler','point'=>32,'stock'=>5],
-                ['img'=>'gopay.png','name'=>'Saldo GoPay Rp 3 jt','point'=>48,'stock'=>3],
-                ['img'=>'gopay.png','name'=>'Saldo GoPay Rp 1 jt','point'=>18,'stock'=>5],
-            ];
-        @endphp
-
         @foreach($prizes as $p)
-        <div class="col-md-4 col-lg-3">
-            <div class="prize-card p-4 text-center">
-                <div>
-                    <div class="prize-image">
-                        <img src="{{ asset('img/'.$p['img']) }}">
+            <div class="col-md-4 col-lg-3">
+                <div class="prize-card p-4 text-center">
+                    <div>
+                        <div class="prize-image">
+                            <img src="{{ asset('img/'.$p->img) }}" alt="{{ $p->name }}">
+                        </div>
+
+                        <div class="prize-title my-1">
+                            {{ $p->name }}
+                        </div>
+
+                        <span class="point-badge">
+                            {{ $p->point }} Poin
+                        </span>
+
+                        <div class="prize-meta mt-2">
+                            Stok: {{ $p->stock }} Unit
+                        </div>
                     </div>
-                    <div class="prize-title my-1">{{ $p['name'] }}</div>
-                    <span class="point-badge">{{ $p['point'] }} Poin</span>
-                    <div class="prize-meta mt-2">Stok: {{ $p['stock'] }} Unit</div>
+
+                    <button
+                        class="btn btn-warning w-100 mt-3 fw-semibold"
+                        {{ $p->stock <= 0 ? 'disabled' : '' }}
+                    >
+                        {{ $p->stock > 0 ? 'Redeem' : 'Habis' }}
+                    </button>
                 </div>
-                <button class="btn btn-warning w-100 mt-3 fw-semibold">
-                    Redeem
-                </button>
             </div>
-        </div>
         @endforeach
     </div>
+
 </div>
 
 </div>
