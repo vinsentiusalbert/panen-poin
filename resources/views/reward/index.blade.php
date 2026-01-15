@@ -20,7 +20,7 @@ body {
 {{-- ================= LIGA ================= --}}
 @if(isset($point) && is_object($point) && isset($point->poin))
 <div class="section-card text-center mb-5">
-    <h2 class="mb-4">Total Poin</h2>
+    <h2 class="mb-4">Badges</h2>
 
     {{-- <div class="row justify-content-center g-4">
         <div class="col-md-4 liga-card">
@@ -44,7 +44,27 @@ body {
             @php
                 $percent = min(($point->poin / 300) * 100, 100);
             @endphp
-
+            <div class="row justify-content-center g-4">
+                @if($point->poin >= 0 && $point->poin <= 100)
+                <div class="col-md-4 liga-card">
+                    <img src="{{ asset('img/rookie.png') }}">
+                    <h5>Rookie</h5>
+                    
+                </div>
+                @elseif($point->poin >= 101 && $point->poin <= 200)
+                <div class="col-md-4 liga-card">
+                    <img src="{{ asset('img/rising_star.png') }}">
+                    <h5>Rising Star</h5>
+                    
+                </div>
+                @elseif($point->poin >= 201 && $point->poin <= 300)
+                <div class="col-md-4 liga-card">
+                    <img src="{{ asset('img/champion.png') }}">
+                    <h5>Champion</h5>
+                    
+                </div>
+                @endif
+            </div>
             <div class="progress">
                 <div 
                     class="progress-bar progress-animate"
@@ -73,12 +93,15 @@ body {
             </div>
             <div class="col-md-9">
                 <div class="table-glass liga-champion animate-right scroll-animate">
+                    
+                    <div class="table-scroll-x">
                     <table class="table table-transparent align-middle mb-0">
                     <thead>
                         <tr>
                             <th>No</th>
+                            {{-- <th>ID</th> --}}
+                            <th>Nama Akun</th>
                             <th>Nama Pelanggan</th>
-                            {{-- <th>Nama Akun</th> --}}
                             <th>Canvasser</th>
                             <th>Total Poin</th>
                             <th>Kategori Liga</th>
@@ -110,6 +133,8 @@ body {
                                         . str_repeat('*', max(strlen($domain) - 2, 0));
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
+                                {{-- <td>{{ $uuid }}</td> --}}
+                                <td>{{ $row['nama_akun'] }}</td>
                                 {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
@@ -140,6 +165,7 @@ body {
                     </tbody>
 
                 </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -159,12 +185,14 @@ body {
             </div>
             <div class="col-md-9">
                 <div class="table-glass liga-rising  animate-right scroll-animate">
+                    <div class="table-scroll-x">
                     <table class="table table-transparent align-middle mb-0">
                     <thead>
                         <tr>
                             <th>No</th>
+                            {{-- <th>ID</th> --}}
+                            <th>Nama Akun</th>
                             <th>Nama Pelanggan</th>
-                            {{-- <th>Nama Akun</th> --}}
                             <th>Canvasser</th>
                             <th>Total Poin</th>
                             <th>Kategori Liga</th>
@@ -196,6 +224,8 @@ body {
                                         . str_repeat('*', max(strlen($domain) - 2, 0));
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
+                                {{-- <td>{{ $uuid }}</td> --}}
+                                <td>{{ $row['nama_akun'] }}</td>
                                 {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
@@ -226,6 +256,7 @@ body {
                     </tbody>
 
                 </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -245,12 +276,14 @@ body {
             </div>
             <div class="col-md-9">
                 <div class="table-glass liga-rookie animate-right scroll-animate">
+                    <div class="table-scroll-x">
                     <table class="table table-transparent align-middle mb-0">
                     <thead>
                         <tr>
                             <th>No</th>
+                            {{-- <th>ID</th> --}}
+                            <th>Nama Akun</th>
                             <th>Nama Pelanggan</th>
-                            {{-- <th>Nama Akun</th> --}}
                             <th>Canvasser</th>
                             <th>Total Poin</th>
                             <th>Kategori Liga</th>
@@ -282,7 +315,8 @@ body {
                                         . str_repeat('*', max(strlen($domain) - 2, 0));
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
-                                {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
+                                {{-- <td>{{ $row['uuid'] }}</td> --}}
+                                <td>{{ $row['nama_akun'] }}</td>
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
                                 <td>{{ $row['nama_canvasser'] }}</td>
@@ -312,6 +346,7 @@ body {
                     </tbody>
 
                 </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -326,54 +361,74 @@ body {
 
     <div class="row g-4 prize-wrapper">
         @foreach($prizes as $p)
-            @php
-                $user = auth()->user();
+    @php
+        $user = auth()->user();
 
-                $notLogin = !auth()->check();
-                $notEnoughPoint = $user && $point->poin < $p->point;
-                $outOfStock = $p->stock <= 0;
+        $notLogin = !auth()->check();
+        $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
 
-                $disabled = $notLogin || $notEnoughPoint || $outOfStock;
-            @endphp
-            
-            <div class="col-md-4 col-lg-3">
-                <div class="prize-card p-4 text-center">
-                    <div>
-                        <div class="prize-image">
-                            <img src="{{ asset('img/'.$p->img) }}" alt="{{ $p->name }}">
-                        </div>
+        $outOfStock = $p->stock <= 0;
 
-                        <div class="prize-title my-1">
-                            {{ $p->name }}
-                        </div>
+        // 🟢 prize ini adalah yang diredeem user
+        $isRedeemedItem = $hasRedeemed && $redeemedPrizeId == $p->id;
 
-                        <span class="point-badge">
-                            {{ $p->point }} Poin
-                        </span>
+        // 🔴 disable semua KECUALI item yang diredeem
+        $disabled = $notLogin
+            || $outOfStock
+            || (!$isRedeemedItem && $hasRedeemed)
+            || (!$hasRedeemed && $notEnoughPoint) ||$isRedeemedItem;
 
-                        <div class="prize-meta mt-2">
-                            Stok: {{ $p->stock }} Unit
-                        </div>
-                    </div>
+        // center jika ganjil
+        $centerClass = ($loop->last && $loop->count % 2 == 1) ? 'mx-auto' : '';
+    @endphp
 
-                    <button
-                        class="btn btn-warning w-100 mt-3 fw-semibold btn-redeem"
-                        data-prize-id="{{ $p->id }}"
-                        {{ $disabled ? 'disabled' : '' }}
-                    >
-                        @if ($outOfStock)
-                            Habis
-                        @elseif ($notLogin)
-                            Redeem
-                        @elseif ($notEnoughPoint)
-                            Poin Tidak Cukup
-                        @else
-                            Redeem
-                        @endif
-                    </button>
+    <div class="col-md-4 col-lg-3 {{ $centerClass }}">
+        <div class="prize-card p-4 text-center
+            {{ $hasRedeemed && !$isRedeemedItem ? 'opacity-50' : '' }}
+            {{ $isRedeemedItem ? 'border border-success' : '' }}
+        ">
+            <div>
+                <div class="prize-image">
+                    <img src="{{ asset('img/'.$p->img) }}" alt="{{ $p->name }}">
+                </div>
+
+                <div class="prize-title my-1">
+                    {{ $p->name }}
+                </div>
+
+                <span class="point-badge">
+                    {{ $p->point }} Poin
+                </span>
+
+                <div class="prize-meta mt-2">
+                    Stok: {{ $p->stock }} Unit
                 </div>
             </div>
-        @endforeach
+
+            <button
+                type="button"
+                class="btn
+                    {{ $isRedeemedItem ? 'btn-success' : 'btn-warning' }}
+                    w-100 mt-3 fw-semibold btn-redeem" data-prize-id="{{ $p->id }}"
+                {{ $disabled ? 'disabled' : '' }}
+            >
+                @if ($isRedeemedItem)
+                    ✓ Sudah Diredeem
+                @elseif ($hasRedeemed)
+                    Tidak Tersedia
+                @elseif ($outOfStock)
+                    Habis
+                @elseif ($notEnoughPoint)
+                    Poin Tidak Cukup
+                @else
+                    Redeem
+                @endif
+            </button>
+        </div>
+    </div>
+@endforeach
+
+
 
     </div>
 

@@ -17,7 +17,7 @@ class PanenPoinController extends Controller
     // Tampilkan halaman input data
     public function index()
     {
-        logUserLogin();
+        // logUserLogin();
         return view('panenpoin.inputdatapoin');
     }
     
@@ -92,12 +92,15 @@ class PanenPoinController extends Controller
                     'poin_akumulasi',
                     'poin',
                     'bulan'
-                )->where('email_client', '=', Auth::user()->email)->first();
+                )->where('email_client', '=', Auth::user()->email_client)->first();
             } else {
                 $point = 0;
             }
-                // dd($point);
-            return view('reward.index', compact('data', 'point','prizes'));
+            $redeem = DB::table('prize_redeems')->where('user_id', auth()->id())->first();
+
+            $redeemedPrizeId = $redeem?->prize_id; // null kalau belum redeem
+            $hasRedeemed = (bool) $redeem;
+            return view('reward.index', compact('data', 'point','prizes', 'hasRedeemed', 'redeemedPrizeId'));
                 
         } catch (\Exception $e) {
             \Log::error("Error in getReportData: " . $e->getMessage());
@@ -113,7 +116,7 @@ class PanenPoinController extends Controller
             \Log::info("=== READING FROM SUMMARY TABLE ===");
 
             $baseQuery = DB::table('summary_panen_poin as s')
-                // ->join('user_panen_poin as u', 'u.akun_myads_pelanggan', '=', 's.email_client')
+                ->join('akun_panen_poin as u', 'u.email_client', '=', 's.email_client')
                 ->select(
                     's.nama_canvasser',
                     's.email_client',
@@ -123,6 +126,8 @@ class PanenPoinController extends Controller
                     's.poin_akumulasi',
                     's.poin',
                     's.bulan',
+                    'u.uuid',
+                    'u.nama_akun',
                     // 'u.akun_myads_pelanggan',
                     // 'u.nomor_hp_pelanggan',
                     // 'u.nama_pelanggan'
@@ -151,6 +156,8 @@ class PanenPoinController extends Controller
                             'poin_akumulasi' => $item->poin_akumulasi,
                             'poin' => $item->poin,
                             'bulan' => $item->bulan,
+                            'uuid' => $item->uuid,
+                            'nama_akun' => $item->nama_akun,
                             // 'akun_myads_pelanggan' => $item->akun_myads_pelanggan,
                             // 'nomor_hp_pelanggan' => $item->nomor_hp_pelanggan,
                             // 'nama_pelanggan' => $item->nama_pelanggan,
@@ -387,7 +394,7 @@ class PanenPoinController extends Controller
                 'message' => 'Silakan login terlebih dahulu'
             ], 401);
         }
-
+        // dd($user->email_client);
         try {
             return DB::transaction(function () use ($request, $user) {
 
@@ -407,7 +414,7 @@ class PanenPoinController extends Controller
 
                 // Ambil poin user
                 $userPointRecord = DB::table('summary_panen_poin')
-                    ->where('email_client', $user->email)
+                    ->where('email_client', $user->email_client)
                     ->first();
 
                 if (!$userPointRecord || $userPointRecord->poin < $prize->point) {
@@ -435,7 +442,7 @@ class PanenPoinController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-
+                $this->updateSummaryAfterRedeem($user->id);
                 return response()->json([
                     'status' => true,
                     'message' => 'Hadiah berhasil ditukar'
@@ -453,4 +460,74 @@ class PanenPoinController extends Controller
     }
 
 
+    // Update summary setelah redeem (dipanggil dari RedeemController)
+    public function updateSummaryAfterRedeem($userId)
+    {
+        try {
+            \Log::info("=== UPDATE SUMMARY AFTER REDEEM FOR USER: {$userId} ===");
+            
+            $currentMonth = Carbon::now()->month;
+            $currentYear = Carbon::now()->year;
+            
+            // Hitung total poin yang sudah di-redeem user ini bulan ini
+            $totalPoinRedeem = DB::table('prize_redeems')
+                ->where('user_id', $userId)
+                ->whereMonth('created_at', $currentMonth)
+                ->whereYear('created_at', $currentYear)
+                ->sum('point_used') ?? 0;
+            
+            \Log::info("Total poin redeem for user {$userId}: {$totalPoinRedeem}");
+            
+            // Update semua record summary user ini di bulan ini
+            $summaries = DB::table('summary_panen_poin')
+                ->where('user_id', $userId)
+                ->whereMonth('created_at', $currentMonth)
+                ->whereYear('created_at', $currentYear)
+                ->get();
+            
+            $updatedCount = 0;
+            foreach ($summaries as $summary) {
+                $poinSisa = $summary->poin - $totalPoinRedeem;
+                $remark = $this->calculateRemark($poinSisa);
+                
+                DB::table('summary_panen_poin')
+                    ->where('id', $summary->id)
+                    ->update([
+                        'poin_redeem' => $totalPoinRedeem,
+                        'remark' => $remark,
+                        'updated_at' => now()
+                    ]);
+                
+                $updatedCount++;
+            }
+            
+            \Log::info("Updated {$updatedCount} summary records after redeem");
+            
+            return [
+                'success' => true,
+                'updated' => $updatedCount,
+                'total_redeem' => $totalPoinRedeem
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error("Error in updateSummaryAfterRedeem: " . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    // Hitung remark berdasarkan poin sisa
+    private function calculateRemark($poinSisa)
+    {
+        if ($poinSisa >= 0 && $poinSisa <= 100) {
+            return 'Rookie';
+        } elseif ($poinSisa >= 101 && $poinSisa <= 200) {
+            return 'Rising Star';
+        } elseif ($poinSisa >= 201) {
+            return 'Champion';
+        }
+        return 'Rookie'; // default
+    }
 }

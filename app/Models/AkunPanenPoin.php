@@ -26,26 +26,13 @@ class AkunPanenPoin extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'uuid' => 'string',
-    ];
-
-    
-    public function username()
-    {
-        return 'email_client';
-    }
-
-    public function getAuthIdentifierName()
-    {
-        return 'email_client';
-    }
 
     /**
      * Relasi ke tabel users
      */
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $casts = [
+        'uuid' => 'string',
+        'password' => 'hashed',
+    ];
+    
 }

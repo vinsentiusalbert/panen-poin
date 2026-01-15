@@ -26,16 +26,12 @@ class BackController extends Controller
             'email.regex' => 'Email harus menggunakan domain @telkomsel.co.id',
         ]);
         
-
-        // dd(Auth::attempt(['email_client' => $request->email, 'password' => $request->password]));
+            // dd('asd');
         // 2. Coba login
         if (Auth::attempt(['email_client' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
             $request->session()->regenerate();
-            dd([
-                'attempt' => Auth::attempt(['email_client' => $request->email, 'password' => $request->password]),
-                'credentials' => $request->only('email','password'),
-            ]);
+            
             return redirect()->route('home'); // fallback
             
         }

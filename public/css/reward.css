@@ -266,3 +266,12 @@ body {
 .tbody, td, tfoot, th, thead, tr{
     border-style: none !important;
 }
+
+.table-scroll-x {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.table-scroll-x table {
+    min-width: 900px; /* atur sesuai jumlah kolom */
+}

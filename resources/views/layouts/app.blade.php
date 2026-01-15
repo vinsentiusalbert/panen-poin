@@ -67,7 +67,7 @@
             <img src="{{ asset('img/assets/myads.png') }}" height="32">
         </a>
         <div class="ms-auto">
-            @guest
+            @guest('web')
                 <button class="btn btn-outline-light fw-semibold"
                         data-bs-toggle="modal"
                         data-bs-target="#loginModal">
@@ -84,7 +84,7 @@
                         role="button"
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
-                            Hi, {{ auth()->user()->name ?? auth()->user()->email }}
+                            Hi, {{ auth()->user()->nama_akun ?? auth()->user()->email_client }}
                         </a>
 
                         <ul class="dropdown-menu dropdown-menu-end shadow">
@@ -163,9 +163,9 @@
 
 <!-- ================= CONTENT ================= -->
 @yield('content')
-asdasdas
+{{-- asdasdas
 {{ dd(auth()->check(), auth()->user()) }}
-asdasd
+asdasd --}}
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
