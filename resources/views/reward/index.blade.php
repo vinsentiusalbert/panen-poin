@@ -62,7 +62,7 @@ body {
 
 {{-- ================= TABLE ================= --}}
 <div class="section-card mb-5">
-    <h4 class="mb-3">TOP 10 Rookie</h4>
+    <h4 class="mb-3">TOP 10 Champion</h4>
 
     <div class="">
         <div class="row">
@@ -78,7 +78,7 @@ body {
                         <tr>
                             <th>No</th>
                             <th>Nama Pelanggan</th>
-                            <th>Nama Akun</th>
+                            {{-- <th>Nama Akun</th> --}}
                             <th>Canvasser</th>
                             <th>Total Poin</th>
                             <th>Kategori Liga</th>
@@ -110,7 +110,7 @@ body {
                                         . str_repeat('*', max(strlen($domain) - 2, 0));
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
-                                <td>{{$row['nama_pelanggan']}}</td>
+                                {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
                                 <td>{{ $row['nama_canvasser'] }}</td>
@@ -164,7 +164,7 @@ body {
                         <tr>
                             <th>No</th>
                             <th>Nama Pelanggan</th>
-                            <th>Nama Akun</th>
+                            {{-- <th>Nama Akun</th> --}}
                             <th>Canvasser</th>
                             <th>Total Poin</th>
                             <th>Kategori Liga</th>
@@ -196,7 +196,7 @@ body {
                                         . str_repeat('*', max(strlen($domain) - 2, 0));
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
-                                <td>{{$row['nama_pelanggan']}}</td>
+                                {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
                                 <td>{{ $row['nama_canvasser'] }}</td>
@@ -233,7 +233,7 @@ body {
 </div>
 
 <div class="section-card mb-5">
-    <h4 class="mb-3">TOP 10 Champion</h4>
+    <h4 class="mb-3">TOP 10 Rookie</h4>
 
     {{-- <div class="table-responsive table-scroll"> --}}
     <div>
@@ -250,7 +250,7 @@ body {
                         <tr>
                             <th>No</th>
                             <th>Nama Pelanggan</th>
-                            <th>Nama Akun</th>
+                            {{-- <th>Nama Akun</th> --}}
                             <th>Canvasser</th>
                             <th>Total Poin</th>
                             <th>Kategori Liga</th>
@@ -282,7 +282,7 @@ body {
                                         . str_repeat('*', max(strlen($domain) - 2, 0));
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
-                                <td>{{$row['nama_pelanggan']}}</td>
+                                {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
                                 <td>{{ $row['nama_canvasser'] }}</td>
@@ -326,6 +326,16 @@ body {
 
     <div class="row g-4 prize-wrapper">
         @foreach($prizes as $p)
+            @php
+                $user = auth()->user();
+
+                $notLogin = !auth()->check();
+                $notEnoughPoint = $user && $point->poin < $p->point;
+                $outOfStock = $p->stock <= 0;
+
+                $disabled = $notLogin || $notEnoughPoint || $outOfStock;
+            @endphp
+            
             <div class="col-md-4 col-lg-3">
                 <div class="prize-card p-4 text-center">
                     <div>
@@ -347,14 +357,24 @@ body {
                     </div>
 
                     <button
-                        class="btn btn-warning w-100 mt-3 fw-semibold"
-                        {{ $p->stock <= 0 ? 'disabled' : '' }}
+                        class="btn btn-warning w-100 mt-3 fw-semibold btn-redeem"
+                        data-prize-id="{{ $p->id }}"
+                        {{ $disabled ? 'disabled' : '' }}
                     >
-                        {{ $p->stock > 0 ? 'Redeem' : 'Habis' }}
+                        @if ($outOfStock)
+                            Habis
+                        @elseif ($notLogin)
+                            Redeem
+                        @elseif ($notEnoughPoint)
+                            Poin Tidak Cukup
+                        @else
+                            Redeem
+                        @endif
                     </button>
                 </div>
             </div>
         @endforeach
+
     </div>
 
 </div>
@@ -407,6 +427,65 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".scroll-animate").forEach(el => {
         observer.observe(el);
     });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-redeem').forEach(button => {
+        button.addEventListener('click', function () {
+            const prizeId = this.dataset.prizeId;
+
+            Swal.fire({
+                title: 'Yakin redeem hadiah ini?',
+                text: 'Poin akan langsung dipotong',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Redeem',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#f59e0b',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    redeemPrize(prizeId);
+                }
+            });
+        });
+    });
+
+    function redeemPrize(prizeId) {
+        fetch("{{ route('redeem') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                prize_id: prizeId
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: data.message,
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: data.message,
+                });
+            }
+        })
+        .catch(() => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan sistem',
+            });
+        });
+    }
 });
 
 

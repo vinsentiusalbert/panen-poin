@@ -113,7 +113,7 @@ class PanenPoinController extends Controller
             \Log::info("=== READING FROM SUMMARY TABLE ===");
 
             $baseQuery = DB::table('summary_panen_poin as s')
-                ->join('user_panen_poin as u', 'u.akun_myads_pelanggan', '=', 's.email_client')
+                // ->join('user_panen_poin as u', 'u.akun_myads_pelanggan', '=', 's.email_client')
                 ->select(
                     's.nama_canvasser',
                     's.email_client',
@@ -123,9 +123,9 @@ class PanenPoinController extends Controller
                     's.poin_akumulasi',
                     's.poin',
                     's.bulan',
-                    'u.akun_myads_pelanggan',
-                    'u.nomor_hp_pelanggan',
-                    'u.nama_pelanggan'
+                    // 'u.akun_myads_pelanggan',
+                    // 'u.nomor_hp_pelanggan',
+                    // 'u.nama_pelanggan'
                 );
 
             // Filter bulan
@@ -151,9 +151,9 @@ class PanenPoinController extends Controller
                             'poin_akumulasi' => $item->poin_akumulasi,
                             'poin' => $item->poin,
                             'bulan' => $item->bulan,
-                            'akun_myads_pelanggan' => $item->akun_myads_pelanggan,
-                            'nomor_hp_pelanggan' => $item->nomor_hp_pelanggan,
-                            'nama_pelanggan' => $item->nama_pelanggan,
+                            // 'akun_myads_pelanggan' => $item->akun_myads_pelanggan,
+                            // 'nomor_hp_pelanggan' => $item->nomor_hp_pelanggan,
+                            // 'nama_pelanggan' => $item->nama_pelanggan,
                         ];
                     })
                     ->toArray();
@@ -370,6 +370,85 @@ class PanenPoinController extends Controller
             \Log::error("Error in refreshSummaryPanenPoin: " . $e->getMessage());
             \Log::error($e->getTraceAsString());
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function redeemPrize(Request $request)
+    {
+        $request->validate([
+            'prize_id' => 'required|integer|exists:prizes,id',
+        ]);
+
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Silakan login terlebih dahulu'
+            ], 401);
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $user) {
+
+                // Cek sudah pernah redeem
+                $alreadyRedeem = DB::table('prize_redeems')
+                    ->where('user_id', $user->id)
+                    ->exists();
+
+                if ($alreadyRedeem) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Anda sudah pernah redeem hadiah'
+                    ], 403);
+                }
+
+                $prize = Prize::lockForUpdate()->findOrFail($request->prize_id);
+
+                // Ambil poin user
+                $userPointRecord = DB::table('summary_panen_poin')
+                    ->where('email_client', $user->email)
+                    ->first();
+
+                if (!$userPointRecord || $userPointRecord->poin < $prize->point) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Poin tidak cukup untuk menukar hadiah ini'
+                    ], 400);
+                }
+
+                if ($prize->stock <= 0) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Stok hadiah habis'
+                    ], 400);
+                }
+
+                // Kurangi stok
+                $prize->decrement('stock');
+
+                // Simpan log redeem
+                DB::table('prize_redeems')->insert([
+                    'user_id' => $user->id,
+                    'prize_id' => $prize->id,
+                    'point_used' => $prize->point,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Hadiah berhasil ditukar'
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            \Log::error('Redeem Error: ' . $e->getMessage());
+            dd($e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan sistem'
+            ], 500);
         }
     }
 

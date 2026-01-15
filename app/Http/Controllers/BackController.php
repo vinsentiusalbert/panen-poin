@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
+// use App\Models\User;
+use App\Models\AkunPanenPoin;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Session;
@@ -25,33 +26,18 @@ class BackController extends Controller
             'email.regex' => 'Email harus menggunakan domain @telkomsel.co.id',
         ]);
         
+
+        // dd(Auth::attempt(['email_client' => $request->email, 'password' => $request->password]));
         // 2. Coba login
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+        if (Auth::attempt(['email_client' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
-
-            // 3. Cek status
-            if ($user->status !== 'Aktif') {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Akun Anda belum aktif.',
-                ])->withInput();
-            }
-
-            // 4. Log user login
-            // logUserLogin();
-
-            // 5. Arahkan sesuai role
-            switch ($user->role) {
-                // case 'Admin':
-                // case 'Tsel':
-                //     return redirect()->route('admin.home');
-                // case 'Treg':
-                //     return redirect()->route('race_summary_treg');
-                // case 'cvsr':
-                //     return redirect()->route('leads-master.index');
-                default:
-                    return redirect()->route('home'); // fallback
-            }
+            $request->session()->regenerate();
+            dd([
+                'attempt' => Auth::attempt(['email_client' => $request->email, 'password' => $request->password]),
+                'credentials' => $request->only('email','password'),
+            ]);
+            return redirect()->route('home'); // fallback
+            
         }
 
         // 6. Kalau gagal login

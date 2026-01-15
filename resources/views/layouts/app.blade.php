@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <title>@yield('title', 'MyAds Reward League')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('css/reward.css') }}">
     @stack('styles')
@@ -65,7 +66,6 @@
         <a class="navbar-brand fw-bold" href="#">
             <img src="{{ asset('img/assets/myads.png') }}" height="32">
         </a>
-
         <div class="ms-auto">
             @guest
                 <button class="btn btn-outline-light fw-semibold"
@@ -163,7 +163,9 @@
 
 <!-- ================= CONTENT ================= -->
 @yield('content')
-
+asdasdas
+{{ dd(auth()->check(), auth()->user()) }}
+asdasd
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
