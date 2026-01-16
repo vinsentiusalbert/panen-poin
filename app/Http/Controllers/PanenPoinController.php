@@ -396,7 +396,6 @@ class PanenPoinController extends Controller
         }
         // dd($user->email_client);
         try {
-            return DB::transaction(function () use ($request, $user) {
 
                 // Cek sudah pernah redeem
                 $alreadyRedeem = DB::table('prize_redeems')
@@ -442,12 +441,12 @@ class PanenPoinController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $this->updateSummaryAfterRedeem($user->id);
+
+               $this->updateSummaryAfterRedeem($user->id);
                 return response()->json([
                     'status' => true,
                     'message' => 'Hadiah berhasil ditukar'
                 ]);
-            });
 
         } catch (\Exception $e) {
             \Log::error('Redeem Error: ' . $e->getMessage());
@@ -475,25 +474,27 @@ class PanenPoinController extends Controller
                 ->whereMonth('created_at', $currentMonth)
                 ->whereYear('created_at', $currentYear)
                 ->sum('point_used') ?? 0;
-            
+
+            $akun = DB::table('akun_panen_poin')
+                ->where('id', $userId)->first();
+                
             \Log::info("Total poin redeem for user {$userId}: {$totalPoinRedeem}");
             
             // Update semua record summary user ini di bulan ini
             $summaries = DB::table('summary_panen_poin')
-                ->where('user_id', $userId)
-                ->whereMonth('created_at', $currentMonth)
-                ->whereYear('created_at', $currentYear)
+                ->where('email_client', $akun->email_client)
                 ->get();
             
             $updatedCount = 0;
             foreach ($summaries as $summary) {
                 $poinSisa = $summary->poin - $totalPoinRedeem;
                 $remark = $this->calculateRemark($poinSisa);
-                
+
                 DB::table('summary_panen_poin')
                     ->where('id', $summary->id)
                     ->update([
                         'poin_redeem' => $totalPoinRedeem,
+                        'poin' => $poinSisa,
                         'remark' => $remark,
                         'updated_at' => now()
                     ]);
