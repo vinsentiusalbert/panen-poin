@@ -117,6 +117,9 @@ class PanenPoinController extends Controller
 
             $baseQuery = DB::table('summary_panen_poin as s')
                 ->join('akun_panen_poin as u', 'u.email_client', '=', 's.email_client')
+                ->leftJoin('mitra_sbp', 's.email_client', '=', 'mitra_sbp.email_myads')
+                // Exclude email yang ada di mitra_sbp
+                ->whereNull('mitra_sbp.id')
                 ->select(
                     's.nama_canvasser',
                     's.email_client',
