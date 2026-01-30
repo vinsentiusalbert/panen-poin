@@ -134,7 +134,9 @@ body {
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
                                 {{-- <td>{{ $uuid }}</td> --}}
-                                <td>{{ $row['nama_akun'] }}</td>
+                                <td>{{
+                                    substr($row['nama_akun'], 0, 2) . str_repeat('*', strlen($row['nama_akun']) - 2)
+                                }}</td>
                                 {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
@@ -225,7 +227,9 @@ body {
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
                                 {{-- <td>{{ $uuid }}</td> --}}
-                                <td>{{ $row['nama_akun'] }}</td>
+                                <td>{{
+                                    substr($row['nama_akun'], 0, 2) . str_repeat('*', strlen($row['nama_akun']) - 2)
+                                }}</td>
                                 {{-- <td>{{$row['nama_pelanggan']}}</td> --}}
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
@@ -316,7 +320,9 @@ body {
                                 @endphp
                                 <td>{{ $index + 1 }}</td>
                                 {{-- <td>{{ $row['uuid'] }}</td> --}}
-                                <td>{{ $row['nama_akun'] }}</td>
+                                <td>{{
+                                    substr($row['nama_akun'], 0, 2) . str_repeat('*', strlen($row['nama_akun']) - 2)
+                                }}</td>
                                 <td>{{ $maskedName .'@'. $maskedDomain }}</td>
                                 
                                 <td>{{ $row['nama_canvasser'] }}</td>
