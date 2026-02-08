@@ -81,18 +81,20 @@ class PanenPoinController extends Controller
             $data = $this->calculatePanenPoinData($request->tanggal);
             $prizes = Prize::orderBy('point', 'desc')->get();
             if ($user) {
-            $point = DB::table('summary_panen_poin')
-                ->select(
-                    'nama_canvasser',
-                    'email_client',
-                    'nomor_hp_client',
-                    DB::raw('CAST(total_settlement AS DECIMAL(15,2)) as total_settlement_raw'),
-                    DB::raw('FORMAT(total_settlement, 0, "id_ID") as total_settlement'),
-                    'poin_bulan_ini',
-                    'poin_akumulasi',
-                    'poin',
-                    'bulan'
-                )->where('email_client', '=', Auth::user()->email_client)->first();
+                $date = Carbon::today();
+                $point = DB::table('summary_panen_poin')
+                    ->select(
+                        'nama_canvasser',
+                        'email_client',
+                        'nomor_hp_client',
+                        DB::raw('CAST(total_settlement AS DECIMAL(15,2)) as total_settlement_raw'),
+                        DB::raw('FORMAT(total_settlement, 0, "id_ID") as total_settlement'),
+                        'poin_bulan_ini',
+                        'poin_akumulasi',
+                        DB::raw('(poin + poin_package) as poin'),
+                        'bulan'
+                    )->where('email_client', '=', Auth::user()->email_client)->whereMonth('created_at', $date->month)
+                        ->whereYear('created_at', $date->year)->first();
             } else {
                 $point = 0;
             }
@@ -128,6 +130,7 @@ class PanenPoinController extends Controller
                     's.poin_bulan_ini',
                     's.poin_akumulasi',
                     's.poin',
+                    's.poin_package',
                     's.bulan',
                     'u.uuid',
                     'u.nama_akun',
@@ -156,7 +159,7 @@ class PanenPoinController extends Controller
                             'total_settlement_raw' => $item->total_settlement_raw,
                             'poin_bulan_ini' => $item->poin_bulan_ini,
                             'poin_akumulasi' => $item->poin_akumulasi,
-                            'poin' => $item->poin,
+                            'poin' => $item->poin + $item->poin_package,
                             'bulan' => $item->bulan,
                             'uuid' => $item->uuid,
                             'nama_akun' => $item->nama_akun,
@@ -396,69 +399,78 @@ class PanenPoinController extends Controller
                 'message' => 'Silakan login terlebih dahulu'
             ], 401);
         }
-        // dd($user->email_client);
-        try {
 
-                // Cek sudah pernah redeem
+        try {
+            DB::transaction(function () use ($request, $user) {
+
+                // Lock hadiah
+                $prize = Prize::where('id', $request->prize_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($prize->stock <= 0) {
+                    throw new \Exception('Stok hadiah habis');
+                }
+
+                // Lock redeem user
                 $alreadyRedeem = DB::table('prize_redeems')
                     ->where('user_id', $user->id)
+                    ->lockForUpdate()
                     ->exists();
 
                 if ($alreadyRedeem) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Anda sudah pernah redeem hadiah'
-                    ], 403);
+                    throw new \Exception('Anda sudah pernah redeem hadiah');
                 }
 
-                $prize = Prize::lockForUpdate()->findOrFail($request->prize_id);
+                // Lock poin user
+                $date = now();
 
-                // Ambil poin user
                 $userPointRecord = DB::table('summary_panen_poin')
                     ->where('email_client', $user->email_client)
+                    ->whereMonth('created_at', $date->month)
+                    ->whereYear('created_at', $date->year)
+                    ->lockForUpdate()
                     ->first();
 
-                if (!$userPointRecord || $userPointRecord->poin < $prize->point) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Poin tidak cukup untuk menukar hadiah ini'
-                    ], 400);
-                }
+                $userPoint = (int) ($userPointRecord->poin ?? 0);
+                $userPointPackage = (int) ($userPointRecord->poin_package ?? 0);
+                $requiredPoint = (int) $prize->point;
 
-                if ($prize->stock <= 0) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Stok hadiah habis'
-                    ], 400);
+                if (($userPoint + $userPointPackage) < $requiredPoint) {
+                    throw new \Exception('Poin tidak cukup untuk menukar hadiah ini');
                 }
 
                 // Kurangi stok
                 $prize->decrement('stock');
 
-                // Simpan log redeem
+                // Simpan redeem
                 DB::table('prize_redeems')->insert([
                     'user_id' => $user->id,
                     'prize_id' => $prize->id,
-                    'point_used' => $prize->point,
+                    'point_used' => $requiredPoint,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-               $this->updateSummaryAfterRedeem($user->id);
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Hadiah berhasil ditukar'
-                ]);
+                // Update summary
+                $this->updateSummaryAfterRedeem($user->id);
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Hadiah berhasil ditukar'
+            ]);
 
         } catch (\Exception $e) {
             \Log::error('Redeem Error: ' . $e->getMessage());
-            dd($e->getMessage());
+
             return response()->json([
                 'status' => false,
-                'message' => 'Terjadi kesalahan sistem'
-            ], 500);
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
+
 
 
     // Update summary setelah redeem (dipanggil dari RedeemController)
