@@ -131,6 +131,7 @@ class PanenPoinController extends Controller
                     's.poin_akumulasi',
                     's.poin',
                     's.poin_package',
+                    DB::raw('(s.poin + s.poin_package) as total_poin'),
                     's.bulan',
                     'u.uuid',
                     'u.nama_akun',
@@ -147,7 +148,7 @@ class PanenPoinController extends Controller
             // }
             // Helper mapper
             $mapResult = function ($query) {
-                return $query->orderBy('s.poin', 'desc')
+                return $query->orderBy(DB::raw('(s.poin + s.poin_package)'), 'desc')
                     ->limit(10)
                     ->get()
                     ->map(function ($item) {
@@ -159,7 +160,7 @@ class PanenPoinController extends Controller
                             'total_settlement_raw' => $item->total_settlement_raw,
                             'poin_bulan_ini' => $item->poin_bulan_ini,
                             'poin_akumulasi' => $item->poin_akumulasi,
-                            'poin' => $item->poin + $item->poin_package,
+                            'poin' => $item->total_poin,
                             'bulan' => $item->bulan,
                             'uuid' => $item->uuid,
                             'nama_akun' => $item->nama_akun,
@@ -173,13 +174,13 @@ class PanenPoinController extends Controller
 
             $result = [
                 'poin_0_100' => $mapResult(
-                    (clone $baseQuery)->whereBetween('s.poin', [0, 100])
+                    (clone $baseQuery)->whereBetween(DB::raw('(s.poin + s.poin_package)'), [0, 100])
                 ),
                 'poin_101_200' => $mapResult(
-                    (clone $baseQuery)->whereBetween('s.poin', [101, 200])
+                    (clone $baseQuery)->whereBetween(DB::raw('(s.poin + s.poin_package)'), [101, 200])
                 ),
                 'poin_201_300' => $mapResult(
-                    (clone $baseQuery)->whereBetween('s.poin', [201, 300])
+                    (clone $baseQuery)->whereBetween(DB::raw('(s.poin + s.poin_package)'), [201, 300])
                 ),
             ];
 
