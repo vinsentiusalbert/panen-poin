@@ -57,7 +57,7 @@ body {
                     <h5>Rising Star</h5>
                     
                 </div>
-                @elseif($point->poin >= 201 && $point->poin <= 300)
+                @elseif($point->poin >= 201)
                 <div class="col-md-4 liga-card">
                     <img src="{{ asset('img/champion.png') }}">
                     <h5>Champion</h5>

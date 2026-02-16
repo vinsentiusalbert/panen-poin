@@ -189,7 +189,7 @@ class PanenPoinController extends Controller
                     (clone $baseQuery)->whereBetween(DB::raw('(s.poin + s.poin_package)'), [101, 200])
                 ),
                 'poin_201_300' => $mapResult(
-                    (clone $baseQuery)->whereBetween(DB::raw('(s.poin + s.poin_package)'), [201, 300])
+                    (clone $baseQuery)->whereBetween(DB::raw('(s.poin + s.poin_package)'), [201, 1000])
                 ),
             ];
 
