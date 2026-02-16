@@ -93,7 +93,8 @@ class PanenPoinController extends Controller
                         'poin_akumulasi',
                         DB::raw('(poin + poin_package) as poin'),
                         'bulan'
-                    )->where('email_client', '=', Auth::user()->email_client)->whereMonth('created_at', $date->month)
+                    )->where('email_client', '=', Auth::user()->email_client)
+                        ->whereMonth('created_at', $date->month)
                         ->whereYear('created_at', $date->year)->first();
             } else {
                 $point = 0;
@@ -102,7 +103,15 @@ class PanenPoinController extends Controller
 
             $redeemedPrizeId = $redeem?->prize_id; // null kalau belum redeem
             $hasRedeemed = (bool) $redeem;
-            return view('reward.index', compact('data', 'point','prizes', 'hasRedeemed', 'redeemedPrizeId'));
+            $today = Carbon::today();
+
+            // Set tanggal mulai redeem (1 Maret tahun ini)
+            $redeemStartDate = Carbon::create($today->year, 3, 1);
+
+            // true kalau sudah boleh redeem
+            $isRedeemPeriod = $today->gte($redeemStartDate);
+            return view('reward.index', compact('data', 'point','prizes', 'hasRedeemed', 'redeemedPrizeId',
+    'isRedeemPeriod'));
                 
         } catch (\Exception $e) {
             \Log::error("Error in getReportData: " . $e->getMessage());
@@ -400,7 +409,15 @@ class PanenPoinController extends Controller
                 'message' => 'Silakan login terlebih dahulu'
             ], 401);
         }
+        $today = Carbon::today();
+        $redeemStartDate = Carbon::create($today->year, 3, 1);
 
+        if ($today->lt($redeemStartDate)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Redeem hanya bisa dilakukan mulai 1 Maret'
+            ]);
+        }
         try {
             DB::transaction(function () use ($request, $user) {
 

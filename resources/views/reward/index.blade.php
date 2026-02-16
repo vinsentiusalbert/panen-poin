@@ -379,10 +379,12 @@ body {
         $isRedeemedItem = $hasRedeemed && $redeemedPrizeId == $p->id;
 
         // 🔴 disable semua KECUALI item yang diredeem
-        $disabled = $notLogin
-            || $outOfStock
-            || (!$isRedeemedItem && $hasRedeemed)
-            || (!$hasRedeemed && $notEnoughPoint) ||$isRedeemedItem;
+        $disabled = !$isRedeemPeriod
+                || $notLogin
+                || $outOfStock
+                || (!$isRedeemedItem && $hasRedeemed)
+                || (!$hasRedeemed && $notEnoughPoint)
+                || $isRedeemedItem;
 
         // center jika ganjil
         $centerClass = ($loop->last && $loop->count % 2 == 1) ? 'mx-auto' : '';
@@ -418,7 +420,9 @@ body {
                     w-100 mt-3 fw-semibold btn-redeem" data-prize-id="{{ $p->id }}"
                 {{ $disabled ? 'disabled' : '' }}
             >
-                @if ($isRedeemedItem)
+                @if (!$isRedeemPeriod)
+                    Mulai 1 Maret
+                @elseif ($isRedeemedItem)
                     ✓ Sudah Diredeem
                 @elseif ($hasRedeemed)
                     Tidak Tersedia
