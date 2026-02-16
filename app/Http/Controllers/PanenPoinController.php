@@ -496,26 +496,29 @@ class PanenPoinController extends Controller
             \Log::info("Total poin redeem for user {$userId}: {$totalPoinRedeem}");
             
             // Update semua record summary user ini di bulan ini
-            $summaries = DB::table('summary_panen_poin')
+            $latestSummary = DB::table('summary_panen_poin')
                 ->where('email_client', $akun->email_client)
-                ->get();
-            
+                ->latest('created_at')
+                ->first();
+
             $updatedCount = 0;
-            foreach ($summaries as $summary) {
-                $poinSisa = $summary->poin - $totalPoinRedeem;
+
+            if ($latestSummary) {
+                $poinSisa = $latestSummary->poin - $totalPoinRedeem;
                 $remark = $this->calculateRemark($poinSisa);
 
                 DB::table('summary_panen_poin')
-                    ->where('id', $summary->id)
+                    ->where('id', $latestSummary->id)
                     ->update([
                         'poin_redeem' => $totalPoinRedeem,
                         'poin' => $poinSisa,
                         'remark' => $remark,
                         'updated_at' => now()
                     ]);
-                
-                $updatedCount++;
+
+                $updatedCount = 1;
             }
+
             
             \Log::info("Updated {$updatedCount} summary records after redeem");
             
