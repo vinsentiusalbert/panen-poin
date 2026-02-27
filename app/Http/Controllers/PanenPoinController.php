@@ -521,14 +521,13 @@ class PanenPoinController extends Controller
             $updatedCount = 0;
 
             if ($latestSummary) {
-                $poinSisa = $latestSummary->poin - $totalPoinRedeem;
+                $poinSisa = ($latestSummary->poin_package + $latestSummary->poin) - $totalPoinRedeem;
                 $remark = $this->calculateRemark($poinSisa);
 
                 DB::table('summary_panen_poin')
                     ->where('id', $latestSummary->id)
                     ->update([
                         'poin_redeem' => $totalPoinRedeem,
-                        'poin' => $poinSisa,
                         'remark' => $remark,
                         'updated_at' => now()
                     ]);
