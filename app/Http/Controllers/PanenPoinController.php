@@ -91,7 +91,7 @@ class PanenPoinController extends Controller
                         DB::raw('FORMAT(total_settlement, 0, "id_ID") as total_settlement'),
                         'poin_bulan_ini',
                         'poin_akumulasi',
-                        DB::raw('(poin + poin_package) as poin'),
+                        DB::raw('((poin + poin_package) - poin_redeem) as poin'),
                         'bulan'
                     )->where('email_client', '=', Auth::user()->email_client)
                         ->whereMonth('created_at', $date->month)
