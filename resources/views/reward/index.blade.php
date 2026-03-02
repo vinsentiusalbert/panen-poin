@@ -375,26 +375,27 @@ body {
 
         $outOfStock = $p->stock <= 0;
 
-        // 🟢 prize ini adalah yang diredeem user
-        $isRedeemedItem = $hasRedeemed && $redeemedPrizeId == $p->id;
+        $user = auth()->user();
 
-        // 🔴 disable semua KECUALI item yang diredeem
+        $notLogin = !auth()->check();
+        $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
+        $outOfStock = $p->stock <= 0;
+
+        $redeemCount = $redeemCounts[$p->id] ?? 0;
+
         $disabled = !$isRedeemPeriod
                 || $notLogin
                 || $outOfStock
-                || (!$isRedeemedItem && $hasRedeemed)
-                || (!$hasRedeemed && $notEnoughPoint)
-                || $isRedeemedItem;
-
+                || $notEnoughPoint
+                || $redeemCount > 0; // disable jika sudah pernah redeem hadiah ini
         // center jika ganjil
         $centerClass = ($loop->last && $loop->count % 2 == 1) ? 'mx-auto' : '';
     @endphp
 
     <div class="col-md-4 col-lg-3 {{ $centerClass }}">
-        <div class="prize-card p-4 text-center
-            {{ $hasRedeemed && !$isRedeemedItem ? 'opacity-50' : '' }}
-            {{ $isRedeemedItem ? 'border border-success' : '' }}
-        ">
+            <div class="prize-card p-4 text-center
+                {{ $redeemCount > 0 ? 'border border-success opacity-75' : '' }}
+            ">
             <div>
                 <div class="prize-image">
                     <img src="{{ asset('img/'.$p->img) }}" alt="{{ $p->name }}">
@@ -411,25 +412,26 @@ body {
                 <div class="prize-meta mt-2">
                     Stok: {{ $p->stock }} Unit
                 </div>
+                
+                <div class="prize-meta mt-1">
+                    Redeemed: {{ $redeemCount }}x
+                </div>
             </div>
 
             <button
                 type="button"
-                class="btn
-                    {{ $isRedeemedItem ? 'btn-success' : 'btn-warning' }}
-                    w-100 mt-3 fw-semibold btn-redeem" data-prize-id="{{ $p->id }}"
+                class="btn {{ $redeemCount > 0 ? 'btn-success' : 'btn-warning' }} w-100 mt-3 fw-semibold btn-redeem"
+                data-prize-id="{{ $p->id }}"
                 {{ $disabled ? 'disabled' : '' }}
             >
                 @if (!$isRedeemPeriod)
                     Mulai 1 Maret
-                @elseif ($isRedeemedItem)
+                @elseif ($redeemCount > 0)
                     ✓ Sudah Diredeem
-                @elseif ($hasRedeemed)
-                    Tidak Tersedia
                 @elseif ($outOfStock)
                     Habis
                 @elseif ($notEnoughPoint)
-                    Redeem
+                    Poin Tidak Cukup
                 @else
                     Redeem
                 @endif
