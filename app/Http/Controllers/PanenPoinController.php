@@ -99,10 +99,20 @@ class PanenPoinController extends Controller
             } else {
                 $point = 0;
             }
-            $redeem = DB::table('prize_redeems')->where('user_id', auth()->id())->first();
-
-            $redeemedPrizeId = $redeem?->prize_id; // null kalau belum redeem
-            $hasRedeemed = (bool) $redeem;
+            $date = Carbon::today();
+            $redeemCounts = DB::table('prize_redeems')
+                ->select('prize_id', DB::raw('COUNT(*) as total'))
+                ->where('user_id', auth()->id())
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->groupBy('prize_id')
+                ->pluck('total', 'prize_id')
+                ->toArray();
+            $totalRedeemThisMonth = DB::table('prize_redeems')
+                ->where('user_id', auth()->id())
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->count();
             $today = Carbon::today();
 
             // Set tanggal mulai redeem (1 Maret tahun ini)
@@ -110,8 +120,14 @@ class PanenPoinController extends Controller
 
             // true kalau sudah boleh redeem
             $isRedeemPeriod = $today->gte($redeemStartDate);
-            return view('reward.index', compact('data', 'point','prizes', 'hasRedeemed', 'redeemedPrizeId',
-    'isRedeemPeriod'));
+            return view('reward.index', compact(
+                'data',
+                'point',
+                'prizes',
+                'redeemCounts',
+                'totalRedeemThisMonth',
+                'isRedeemPeriod'
+            ));
                 
         } catch (\Exception $e) {
             \Log::error("Error in getReportData: " . $e->getMessage());
@@ -420,7 +436,21 @@ class PanenPoinController extends Controller
         }
         try {
             DB::transaction(function () use ($request, $user) {
+                // Serialize redeem per user to prevent double-submit race.
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
 
+                $redeemCountThisMonth = DB::table('prize_redeems')
+                        ->where('user_id', $user->id)
+                        ->whereMonth('created_at', now()->month)
+                        ->whereYear('created_at', now()->year)
+                        ->count();
+
+                    if ($redeemCountThisMonth >= 2) {
+                        throw new \Exception('Anda sudah mencapai batas maksimal 2 redeem bulan ini');
+                    }
                 // Lock hadiah
                 $prize = Prize::where('id', $request->prize_id)
                     ->lockForUpdate()
@@ -430,14 +460,17 @@ class PanenPoinController extends Controller
                     throw new \Exception('Stok hadiah habis');
                 }
 
-                // Lock redeem user
-                $alreadyRedeem = DB::table('prize_redeems')
+                // Cek apakah user sudah redeem hadiah ini
+                $alreadyRedeemThisPrize = DB::table('prize_redeems')
                     ->where('user_id', $user->id)
+                    ->where('prize_id', $request->prize_id)
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
                     ->lockForUpdate()
                     ->exists();
 
-                if ($alreadyRedeem) {
-                    throw new \Exception('Anda sudah pernah redeem hadiah');
+                if ($alreadyRedeemThisPrize) {
+                    throw new \Exception('Anda sudah pernah redeem hadiah ini');
                 }
 
                 // Lock poin user
@@ -566,3 +599,4 @@ class PanenPoinController extends Controller
         return 'Rookie'; // default
     }
 }
+
