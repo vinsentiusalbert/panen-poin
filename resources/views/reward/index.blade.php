@@ -369,25 +369,17 @@ body {
         @foreach($prizes as $p)
     @php
         $user = auth()->user();
-
-        $notLogin = !auth()->check();
-        $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
-
-        $outOfStock = $p->stock <= 0;
-
-        $user = auth()->user();
-
         $notLogin = !auth()->check();
         $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
         $outOfStock = $p->stock <= 0;
-
         $redeemCount = $redeemCounts[$p->id] ?? 0;
-
+        $monthlyRedeemLimitReached = ($totalRedeemThisMonth ?? 0) >= 2;
         $disabled = !$isRedeemPeriod
                 || $notLogin
                 || $outOfStock
                 || $notEnoughPoint
-                || $redeemCount > 0; // disable jika sudah pernah redeem hadiah ini
+                || $monthlyRedeemLimitReached
+                || $redeemCount > 0; // disable jika sudah redeem hadiah ini di bulan berjalan
         // center jika ganjil
         $centerClass = ($loop->last && $loop->count % 2 == 1) ? 'mx-auto' : '';
     @endphp
@@ -413,9 +405,9 @@ body {
                     Stok: {{ $p->stock }} Unit
                 </div>
                 
-                <div class="prize-meta mt-1">
+                {{-- <div class="prize-meta mt-1">
                     Redeemed: {{ $redeemCount }}x
-                </div>
+                </div> --}}
             </div>
 
             <button
@@ -427,9 +419,13 @@ body {
                 @if (!$isRedeemPeriod)
                     Mulai 1 Maret
                 @elseif ($redeemCount > 0)
-                    ✓ Sudah Diredeem
+                    Sudah Diredeem
                 @elseif ($outOfStock)
                     Habis
+                @elseif ($monthlyRedeemLimitReached)
+                    Limit
+                @elseif ($notLogin)
+                    Redeem
                 @elseif ($notEnoughPoint)
                     Poin Tidak Cukup
                 @else
@@ -558,3 +554,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </script>
 @endpush
+

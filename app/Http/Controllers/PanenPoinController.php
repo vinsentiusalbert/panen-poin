@@ -99,12 +99,20 @@ class PanenPoinController extends Controller
             } else {
                 $point = 0;
             }
+            $date = Carbon::today();
             $redeemCounts = DB::table('prize_redeems')
                 ->select('prize_id', DB::raw('COUNT(*) as total'))
                 ->where('user_id', auth()->id())
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
                 ->groupBy('prize_id')
                 ->pluck('total', 'prize_id')
                 ->toArray();
+            $totalRedeemThisMonth = DB::table('prize_redeems')
+                ->where('user_id', auth()->id())
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->count();
             $today = Carbon::today();
 
             // Set tanggal mulai redeem (1 Maret tahun ini)
@@ -117,6 +125,7 @@ class PanenPoinController extends Controller
                 'point',
                 'prizes',
                 'redeemCounts',
+                'totalRedeemThisMonth',
                 'isRedeemPeriod'
             ));
                 
@@ -427,6 +436,12 @@ class PanenPoinController extends Controller
         }
         try {
             DB::transaction(function () use ($request, $user) {
+                // Serialize redeem per user to prevent double-submit race.
+                DB::table('users')
+                    ->where('id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
                 $redeemCountThisMonth = DB::table('prize_redeems')
                         ->where('user_id', $user->id)
                         ->whereMonth('created_at', now()->month)
@@ -434,7 +449,7 @@ class PanenPoinController extends Controller
                         ->count();
 
                     if ($redeemCountThisMonth >= 2) {
-                        throw new \Exception('Anda sudah mencapai batas maksimal 3 redeem bulan ini');
+                        throw new \Exception('Anda sudah mencapai batas maksimal 2 redeem bulan ini');
                     }
                 // Lock hadiah
                 $prize = Prize::where('id', $request->prize_id)
@@ -449,6 +464,8 @@ class PanenPoinController extends Controller
                 $alreadyRedeemThisPrize = DB::table('prize_redeems')
                     ->where('user_id', $user->id)
                     ->where('prize_id', $request->prize_id)
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
                     ->lockForUpdate()
                     ->exists();
 
@@ -582,3 +599,4 @@ class PanenPoinController extends Controller
         return 'Rookie'; // default
     }
 }
+
