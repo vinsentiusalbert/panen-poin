@@ -373,7 +373,7 @@ body {
         $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
         $outOfStock = $p->stock <= 0;
         $redeemCount = $redeemCounts[$p->id] ?? 0;
-        $monthlyRedeemLimitReached = ($totalRedeemThisMonth ?? 0) >= 2;
+        $monthlyRedeemLimitReached = ($totalRedeemThisMonth ?? 0) >= ($redeemMonthlyLimit ?? 2);
         $disabled = !$isRedeemPeriod
                 || $notLogin
                 || $outOfStock
@@ -416,8 +416,10 @@ body {
                 data-prize-id="{{ $p->id }}"
                 {{ $disabled ? 'disabled' : '' }}
             >
-                @if (!$isRedeemPeriod)
-                    Mulai 1 Maret
+                @if ($isRedeemEnded)
+                    Berakhir 31 Maret 2026
+                @elseif (!$isRedeemPeriod)
+                    Mulai 1 Maret 2026
                 @elseif ($redeemCount > 0)
                     Sudah Diredeem
                 @elseif ($outOfStock)
@@ -554,4 +556,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </script>
 @endpush
-
