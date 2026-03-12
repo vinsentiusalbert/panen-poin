@@ -113,20 +113,27 @@ class PanenPoinController extends Controller
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->count();
+            $specialRedeemEmails = ['mustahikmiskin@gmail.com'];
+            $userEmail = $user ? strtolower($user->email ?? $user->email_client ?? '') : '';
+            $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 3 : 2;
             $today = Carbon::today();
 
-            // Set tanggal mulai redeem (1 Maret tahun ini)
-            $redeemStartDate = Carbon::create($today->year, 3, 1);
+            // Set periode redeem (1-31 Maret 2026)
+            $redeemStartDate = Carbon::create(2026, 3, 1);
+            $redeemEndDate = Carbon::create(2026, 3, 31)->endOfDay();
 
-            // true kalau sudah boleh redeem
-            $isRedeemPeriod = $today->gte($redeemStartDate);
+            // true kalau hari ini masih dalam periode redeem
+            $isRedeemPeriod = $today->between($redeemStartDate, $redeemEndDate);
+            $isRedeemEnded = $today->gt($redeemEndDate);
             return view('reward.index', compact(
                 'data',
                 'point',
                 'prizes',
                 'redeemCounts',
                 'totalRedeemThisMonth',
-                'isRedeemPeriod'
+                'redeemMonthlyLimit',
+                'isRedeemPeriod',
+                'isRedeemEnded'
             ));
                 
         } catch (\Exception $e) {
@@ -426,12 +433,19 @@ class PanenPoinController extends Controller
             ], 401);
         }
         $today = Carbon::today();
-        $redeemStartDate = Carbon::create($today->year, 3, 1);
+        $redeemStartDate = Carbon::create(2026, 3, 1);
+        $redeemEndDate = Carbon::create(2026, 3, 31)->endOfDay();
 
         if ($today->lt($redeemStartDate)) {
             return response()->json([
                 'status' => false,
-                'message' => 'Redeem hanya bisa dilakukan mulai 1 Maret'
+                'message' => 'Redeem hanya bisa dilakukan mulai 1 Maret 2026'
+            ]);
+        }
+        if ($today->gt($redeemEndDate)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Periode redeem berakhir pada 31 Maret 2026'
             ]);
         }
         try {
@@ -448,8 +462,12 @@ class PanenPoinController extends Controller
                         ->whereYear('created_at', now()->year)
                         ->count();
 
-                    if ($redeemCountThisMonth >= 2) {
-                        throw new \Exception('Anda sudah mencapai batas maksimal 2 redeem bulan ini');
+                    $specialRedeemEmails = ['mustahikmiskin@gmail.com'];
+                    $userEmail = strtolower($user->email ?? $user->email_client ?? '');
+                    $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 3 : 2;
+
+                    if ($redeemCountThisMonth >= $redeemMonthlyLimit) {
+                        throw new \Exception("Anda sudah mencapai batas maksimal {$redeemMonthlyLimit} redeem bulan ini");
                     }
                 // Lock hadiah
                 $prize = Prize::where('id', $request->prize_id)
@@ -599,4 +617,3 @@ class PanenPoinController extends Controller
         return 'Rookie'; // default
     }
 }
-
