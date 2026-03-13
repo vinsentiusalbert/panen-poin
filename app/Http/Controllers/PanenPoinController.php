@@ -114,7 +114,7 @@ class PanenPoinController extends Controller
                 ->whereYear('created_at', $date->year)
                 ->count();
             $specialRedeemLimits = [
-                'mustahikmiskin@gmail.com' => 6,
+                'mustahikmiskin@gmail.com' => 5,
                 'donny.fajar@yahoo.com' => 3,
                 'donnyfajarramadhan@gmail.com' => 3,
                 'donny.ramadhan@baznas.go.id' => 3,
@@ -472,7 +472,7 @@ class PanenPoinController extends Controller
                         ->count();
 
                     $specialRedeemLimits = [
-                        'mustahikmiskin@gmail.com' => 6,
+                        'mustahikmiskin@gmail.com' => 5,
                         'donny.fajar@yahoo.com' => 3,
                         'donnyfajarramadhan@gmail.com' => 3,
                         'donny.ramadhan@baznas.go.id' => 3,
