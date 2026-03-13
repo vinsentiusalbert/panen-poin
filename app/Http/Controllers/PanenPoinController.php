@@ -113,9 +113,18 @@ class PanenPoinController extends Controller
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->count();
-            $specialRedeemEmails = ['mustahikmiskin@gmail.com'];
+            $specialRedeemLimits = [
+                'mustahikmiskin@gmail.com' => 6,
+                'donny.fajar@yahoo.com' => 3,
+                'donnyfajarramadhan@gmail.com' => 3,
+                'donny.ramadhan@baznas.go.id' => 3,
+                'baznastelkomsel@gmail.com' => 3,
+                'smsblastbaznas@gmail.com' => 3,
+                'myadsbaznas@gmail.com' => 3,
+                'retail@baznas.go.id' => 3,
+            ];
             $userEmail = $user ? strtolower($user->email ?? $user->email_client ?? '') : '';
-            $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 3 : 2;
+            $redeemMonthlyLimit = $specialRedeemLimits[$userEmail] ?? 2;
             $today = Carbon::today();
 
             // Set periode redeem (1-31 Maret 2026)
@@ -462,9 +471,18 @@ class PanenPoinController extends Controller
                         ->whereYear('created_at', now()->year)
                         ->count();
 
-                    $specialRedeemEmails = ['mustahikmiskin@gmail.com'];
+                    $specialRedeemLimits = [
+                        'mustahikmiskin@gmail.com' => 6,
+                        'donny.fajar@yahoo.com' => 3,
+                        'donnyfajarramadhan@gmail.com' => 3,
+                        'donny.ramadhan@baznas.go.id' => 3,
+                        'baznastelkomsel@gmail.com' => 3,
+                        'smsblastbaznas@gmail.com' => 3,
+                        'myadsbaznas@gmail.com' => 3,
+                        'retail@baznas.go.id' => 3,
+                    ];
                     $userEmail = strtolower($user->email ?? $user->email_client ?? '');
-                    $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 3 : 2;
+                    $redeemMonthlyLimit = $specialRedeemLimits[$userEmail] ?? 2;
 
                     if ($redeemCountThisMonth >= $redeemMonthlyLimit) {
                         throw new \Exception("Anda sudah mencapai batas maksimal {$redeemMonthlyLimit} redeem bulan ini");
