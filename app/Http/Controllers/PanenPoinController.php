@@ -115,7 +115,7 @@ class PanenPoinController extends Controller
                 ->count();
             $specialRedeemEmails = ['mustahikmiskin@gmail.com'];
             $userEmail = $user ? strtolower($user->email ?? $user->email_client ?? '') : '';
-            $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 3 : 2;
+            $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 5 : 2;
             $today = Carbon::today();
 
             // Set periode redeem (1-31 Maret 2026)
@@ -464,7 +464,7 @@ class PanenPoinController extends Controller
 
                     $specialRedeemEmails = ['mustahikmiskin@gmail.com'];
                     $userEmail = strtolower($user->email ?? $user->email_client ?? '');
-                    $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 3 : 2;
+                    $redeemMonthlyLimit = in_array($userEmail, $specialRedeemEmails, true) ? 5 : 2;
 
                     if ($redeemCountThisMonth >= $redeemMonthlyLimit) {
                         throw new \Exception("Anda sudah mencapai batas maksimal {$redeemMonthlyLimit} redeem bulan ini");
