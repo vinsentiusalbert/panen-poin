@@ -16,6 +16,9 @@ body {
 
 @section('content')
 <div class="container my-5">
+@php
+    $user = auth()->user();
+@endphp
 
 {{-- ================= LIGA ================= --}}
 @if(isset($point) && is_object($point) && isset($point->poin))
@@ -74,6 +77,26 @@ body {
             </div>
 
             <small>Total Poin Anda: <b>{{ $point->poin }}</b></small>
+
+            @if($user)
+                <div class="mt-3">
+                    <button type="button" class="btn btn-contact fw-semibold" data-bs-toggle="modal" data-bs-target="#contactInfoModal">
+                        Isi Alamat Pengiriman
+                    </button>
+                </div>
+                @if($userContactInfos->isNotEmpty())
+                    @php
+                        $latestContact = $userContactInfos->first();
+                    @endphp
+                    <small class="contact-summary d-block mt-2">
+                        Kontak tersimpan: <span>{{ $latestContact->phone }}</span> | <span>{{ $latestContact->address }}</span>
+                    </small>
+                @else
+                    <small class="contact-summary d-block mt-2">Belum ada data kontak tersimpan.</small>
+                @endif
+            @else
+                <small class="contact-summary d-block mt-3">Login untuk mengisi data kontak.</small>
+            @endif
         </div>
 
 </div>
@@ -444,6 +467,44 @@ body {
 
 </div>
 
+</div>
+
+<!-- Modal Contact Info -->
+<div class="modal fade contact-modal" id="contactInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content contact-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Isi Nomor Telp & Alamat</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ route('contact-info.store') }}">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Telp</label>
+                        <input type="text"
+                               name="phone"
+                               class="form-control contact-input"
+                               placeholder="62xxxxxxxxx"
+                               inputmode="numeric"
+                               minlength="10"
+                               maxlength="14"
+                               pattern="^62[0-9]{8,12}$"
+                               required>
+                        <small class="text-muted">Format: 62 + 8-12 digit (total 10-14 digit)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alamat</label>
+                        <textarea name="address" class="form-control contact-input" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-contact">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
 
