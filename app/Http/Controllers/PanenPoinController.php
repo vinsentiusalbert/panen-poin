@@ -113,14 +113,20 @@ class PanenPoinController extends Controller
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
                 ->count();
+            $userContactInfos = $user
+                ? DB::table('user_contact_infos')
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('created_at')
+                    ->get()
+                : collect();
             $specialRedeemLimits = [
                 'mustahikmiskin@gmail.com' => 5,
                 'donny.fajar@yahoo.com' => 3,
-                'donnyfajarramadhan@gmail.com' => 3,
+                'donnyfajarramadhan@gmail.com' => 5,
                 'donny.ramadhan@baznas.go.id' => 3,
-                'baznastelkomsel@gmail.com' => 3,
-                'smsblastbaznas@gmail.com' => 3,
-                'myadsbaznas@gmail.com' => 3,
+                'baznastelkomsel@gmail.com' => 5,
+                'smsblastbaznas@gmail.com' => 5,
+                'myadsbaznas@gmail.com' => 5,
                 'retail@baznas.go.id' => 3,
             ];
             $userEmail = $user ? strtolower($user->email ?? $user->email_client ?? '') : '';
@@ -140,6 +146,7 @@ class PanenPoinController extends Controller
                 'prizes',
                 'redeemCounts',
                 'totalRedeemThisMonth',
+                'userContactInfos',
                 'redeemMonthlyLimit',
                 'isRedeemPeriod',
                 'isRedeemEnded'
@@ -457,8 +464,18 @@ class PanenPoinController extends Controller
                 'message' => 'Periode redeem berakhir pada 31 Maret 2026'
             ]);
         }
+        $latestContact = DB::table('user_contact_infos')
+            ->where('user_id', $user->id)
+            ->latest('created_at')
+            ->first();
+        if (!$latestContact) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Lengkapi nomor telp dan alamat terlebih dahulu'
+            ], 400);
+        }
         try {
-            DB::transaction(function () use ($request, $user) {
+            DB::transaction(function () use ($request, $user, $latestContact) {
                 // Serialize redeem per user to prevent double-submit race.
                 DB::table('users')
                     ->where('id', $user->id)
@@ -474,11 +491,11 @@ class PanenPoinController extends Controller
                     $specialRedeemLimits = [
                         'mustahikmiskin@gmail.com' => 5,
                         'donny.fajar@yahoo.com' => 3,
-                        'donnyfajarramadhan@gmail.com' => 3,
+                        'donnyfajarramadhan@gmail.com' => 5,
                         'donny.ramadhan@baznas.go.id' => 3,
-                        'baznastelkomsel@gmail.com' => 3,
-                        'smsblastbaznas@gmail.com' => 3,
-                        'myadsbaznas@gmail.com' => 3,
+                        'baznastelkomsel@gmail.com' => 5,
+                        'smsblastbaznas@gmail.com' => 5,
+                        'myadsbaznas@gmail.com' => 5,
                         'retail@baznas.go.id' => 3,
                     ];
                     $userEmail = strtolower($user->email ?? $user->email_client ?? '');
@@ -535,6 +552,8 @@ class PanenPoinController extends Controller
                     'user_id' => $user->id,
                     'prize_id' => $prize->id,
                     'point_used' => $requiredPoint,
+                    'phone' => $latestContact->phone,
+                    'address' => $latestContact->address,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -556,6 +575,31 @@ class PanenPoinController extends Controller
                 'message' => $e->getMessage()
             ], 400);
         }
+    }
+
+    public function storeContactInfo(Request $request)
+    {
+        $request->validate([
+            'phone' => ['required', 'string', 'min:10', 'max:14', 'regex:/^62[0-9]{8,12}$/'],
+            'address' => 'required|string|max:255',
+        ]);
+
+        $user = auth()->user();
+        if (!$user) {
+            return redirect()->back()->with('error', 'Silakan login terlebih dahulu.');
+        }
+
+        DB::table('user_contact_infos')->updateOrInsert(
+            ['user_id' => $user->id],
+            [
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        return redirect()->back()->with('success', 'Data kontak berhasil disimpan.');
     }
 
 

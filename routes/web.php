@@ -13,3 +13,4 @@ Route::post('/login', [BackController::class, 'login'])->name('login');
 Route::post('/logout', [BackController::class, 'logout'])->name('logout');
 
 Route::post('/redeem', [PanenPoinController::class, 'redeemPrize'])->name('redeem');
+Route::post('/contact-info', [PanenPoinController::class, 'storeContactInfo'])->name('contact-info.store');
