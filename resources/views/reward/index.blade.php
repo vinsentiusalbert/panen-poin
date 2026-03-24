@@ -91,6 +91,27 @@ body {
                     <small class="contact-summary d-block mt-2">
                         Kontak tersimpan: <span>{{ $latestContact->phone }}</span> | <span>{{ $latestContact->address }}</span>
                     </small>
+                    <div class="mt-3">
+                        @if($latestRedeemProof && $latestRedeemProof->proof_path)
+                            <small class="contact-summary d-block">
+                                Bukti terima sudah diupload.
+                            </small>
+                            <a class="btn btn-outline-light btn-sm mt-2" href="{{ \Illuminate\Support\Facades\Storage::url($latestRedeemProof->proof_path) }}" target="_blank">
+                                Lihat Bukti
+                            </a>
+                            <form method="POST" action="{{ route('redeem.proof') }}" enctype="multipart/form-data" class="d-flex flex-column align-items-center gap-2 mt-2">
+                                @csrf
+                                <input type="file" name="proof" class="form-control contact-input" accept=".jpg,.jpeg,.png,.pdf" required>
+                                <button type="submit" class="btn btn-contact">Ganti Bukti</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('redeem.proof') }}" enctype="multipart/form-data" class="d-flex flex-column align-items-center gap-2">
+                                @csrf
+                                <input type="file" name="proof" class="form-control contact-input" accept=".jpg,.jpeg,.png,.pdf" required>
+                                <button type="submit" class="btn btn-contact">Upload Bukti Terima</button>
+                            </form>
+                        @endif
+                    </div>
                 @else
                     <small class="contact-summary d-block mt-2">Belum ada data kontak tersimpan.</small>
                 @endif
