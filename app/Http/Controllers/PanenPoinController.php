@@ -8,12 +8,23 @@ use App\Models\User;
 use App\Models\Prize;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class PanenPoinController extends Controller
 {
+    private function ensureAdminRedeemAccess()
+    {
+        $user = auth()->user();
+        $email = $user ? strtolower($user->email_client ?? $user->email ?? '') : '';
+        if ($email !== 'ptsenabarokahmandiri@gmail.com') {
+            abort(403);
+        }
+        // dd($email);
+        return $user;
+    }
     // Tampilkan halaman input data
     public function index()
     {
@@ -140,6 +151,19 @@ class PanenPoinController extends Controller
             // true kalau hari ini masih dalam periode redeem
             $isRedeemPeriod = $today->between($redeemStartDate, $redeemEndDate);
             $isRedeemEnded = $today->gt($redeemEndDate);
+            $latestRedeem = $user
+                ? DB::table('prize_redeems')
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('created_at')
+                    ->first()
+                : null;
+            $latestRedeemProof = $user
+                ? DB::table('prize_redeems')
+                    ->where('user_id', $user->id)
+                    ->whereNotNull('proof_path')
+                    ->orderByDesc('created_at')
+                    ->first()
+                : null;
             return view('reward.index', compact(
                 'data',
                 'point',
@@ -148,6 +172,8 @@ class PanenPoinController extends Controller
                 'totalRedeemThisMonth',
                 'userContactInfos',
                 'redeemMonthlyLimit',
+                'latestRedeem',
+                'latestRedeemProof',
                 'isRedeemPeriod',
                 'isRedeemEnded'
             ));
@@ -306,6 +332,137 @@ class PanenPoinController extends Controller
             \Log::error("Error in export: " . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal export data: ' . $e->getMessage());
         }
+    }
+
+    public function adminRedeems()
+    {
+        $this->ensureAdminRedeemAccess();
+
+        $redeems = DB::table('prize_redeems as pr')
+            ->join('prizes as p', 'p.id', '=', 'pr.prize_id')
+            ->join('akun_panen_poin as u', 'u.id', '=', 'pr.user_id')
+            ->leftJoin('user_contact_infos as uc', 'uc.user_id', '=', 'pr.user_id')
+            ->select(
+                'pr.id',
+                'u.nama_akun',
+                'u.email_client',
+                'uc.phone',
+                'uc.address',
+                'p.name as prize_name',
+                'pr.created_at',
+                'pr.shipped_at',
+                'pr.proof_path'
+            )
+            ->orderByDesc('pr.created_at')
+            ->get();
+
+        return view('reward.admin_redeems', compact('redeems'));
+    }
+
+    public function markRedeemShipped($id)
+    {
+        $this->ensureAdminRedeemAccess();
+
+        DB::table('prize_redeems')
+            ->where('id', $id)
+            ->update([
+                'shipped_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        return redirect()->back()->with('success', 'Status dikirim sudah diperbarui.');
+    }
+
+    public function uploadRedeemProof(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return redirect()->back()->with('error', 'Silakan login terlebih dahulu.');
+        }
+
+        $request->validate([
+            'proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        $latestRedeem = DB::table('prize_redeems')
+            ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->first();
+
+        $latestRedeemProof = DB::table('prize_redeems')
+            ->where('user_id', $user->id)
+            ->whereNotNull('proof_path')
+            ->orderByDesc('created_at')
+            ->first();
+
+        $targetRedeem = $latestRedeemProof ?? $latestRedeem;
+
+        if (!$targetRedeem) {
+            return redirect()->back()->with('error', 'Belum ada data redeem.');
+        }
+
+        $path = $request->file('proof')->store('redeem_proofs', 'public');
+
+        DB::table('prize_redeems')
+            ->where('id', $targetRedeem->id)
+            ->update([
+                'proof_path' => $path,
+                'updated_at' => now(),
+            ]);
+
+        return redirect()->back()->with('success', 'Bukti terima berhasil diupload.');
+    }
+
+    public function exportRedeemsExcel()
+    {
+        $this->ensureAdminRedeemAccess();
+
+        $rows = DB::table('prize_redeems as pr')
+            ->join('prizes as p', 'p.id', '=', 'pr.prize_id')
+            ->join('akun_panen_poin as u', 'u.id', '=', 'pr.user_id')
+            ->leftJoin('user_contact_infos as uc', 'uc.user_id', '=', 'pr.user_id')
+            ->select(
+                'u.nama_akun',
+                'u.email_client',
+                'uc.phone',
+                'uc.address',
+                'p.name as prize_name',
+                'pr.created_at'
+            )
+            ->orderByDesc('pr.created_at')
+            ->get();
+        $fileName = 'Laporan_Redeem_' . Carbon::now()->format('Ymd_His') . '.xls';
+
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        echo '<table border="1">';
+        echo '<tr>';
+        echo '<th>No</th>';
+        echo '<th>Nama Akun</th>';
+        echo '<th>Email</th>';
+        echo '<th>Nomor Telp</th>';
+        echo '<th>Alamat</th>';
+        echo '<th>Hadiah</th>';
+        echo '<th>Tanggal Redeem</th>';
+        echo '</tr>';
+
+        $no = 1;
+        foreach ($rows as $item) {
+            echo '<tr>';
+            echo '<td>' . $no++ . '</td>';
+            echo '<td>' . htmlspecialchars($item->nama_akun ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($item->email_client ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($item->phone ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($item->address ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($item->prize_name ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . Carbon::parse($item->created_at)->format('d-m-Y') . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</table>';
+        exit;
     }
     
     // Refresh Summary Panen Poin (untuk di-schedule)
@@ -552,8 +709,6 @@ class PanenPoinController extends Controller
                     'user_id' => $user->id,
                     'prize_id' => $prize->id,
                     'point_used' => $requiredPoint,
-                    'phone' => $latestContact->phone,
-                    'address' => $latestContact->address,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
