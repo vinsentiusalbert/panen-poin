@@ -512,6 +512,7 @@ body {
                                maxlength="14"
                                pattern="^62[0-9]{8,12}$"
                                required>
+                        <small>*) Nomor untuk OVO / Gopay / Link Aja</small>
                         <small class="text-muted">Format: 62 + 8-12 digit (total 10-14 digit)</small>
                     </div>
                     <div class="mb-3">
