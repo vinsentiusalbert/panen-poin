@@ -413,15 +413,18 @@ body {
         @foreach($prizes as $p)
     @php
         $user = auth()->user();
+        $userEmail = $user ? strtolower($user->email ?? $user->email_client ?? '') : '';
         $notLogin = !auth()->check();
         $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
         $outOfStock = $p->stock <= 0;
         $redeemCount = $redeemCounts[$p->id] ?? 0;
         $monthlyRedeemLimitReached = ($totalRedeemThisMonth ?? 0) >= ($redeemMonthlyLimit ?? 2);
+        
+       
+        $disableForAllExceptSpecificUser = ($userEmail !== 'a@gmail.com');
+
         $disabled = !$isRedeemPeriod
-                || $notLogin
-                || $outOfStock
-                || $notEnoughPoint
+                || $disableForAllExceptSpecificUser || $notLogin || $outOfStock || $notEnoughPoint
                 || $monthlyRedeemLimitReached
                 || $redeemCount > 0; // disable jika sudah redeem hadiah ini di bulan berjalan
         // center jika ganjil
