@@ -114,8 +114,8 @@ class PanenPoinController extends Controller
             $redeemCounts = DB::table('prize_redeems')
                 ->select('prize_id', DB::raw('COUNT(*) as total'))
                 ->where('user_id', auth()->id())
-                ->whereMonth('created_at', $date->month)
-                ->whereYear('created_at', $date->year)
+                ->whereMonth('created_at', 3)
+                ->whereYear('created_at', 2026)
                 ->groupBy('prize_id')
                 ->pluck('total', 'prize_id')
                 ->toArray();
@@ -644,8 +644,8 @@ class PanenPoinController extends Controller
 
                 $redeemCountThisMonth = DB::table('prize_redeems')
                         ->where('user_id', $user->id)
-                        ->whereMonth('created_at', now()->month)
-                        ->whereYear('created_at', now()->year)
+                        ->whereMonth('created_at', $date->month)
+                        ->whereYear('created_at', $date->year)
                         ->count();
 
                     $specialRedeemLimits = [

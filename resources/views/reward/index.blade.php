@@ -463,12 +463,13 @@ body {
                 data-prize-id="{{ $p->id }}"
                 {{ $disabled ? 'disabled' : '' }}
             >
-                @if ($isRedeemEnded)
+            
+                @if ($redeemCount > 0)
+                    Sudah Diredeem
+                @elseif ($isRedeemEnded)
                     Berakhir 31 Maret 2026
                 @elseif (!$isRedeemPeriod)
                     Mulai 1 Maret 2026
-                @elseif ($redeemCount > 0)
-                    Sudah Diredeem
                 @elseif ($outOfStock)
                     Habis
                 @elseif ($monthlyRedeemLimitReached)
