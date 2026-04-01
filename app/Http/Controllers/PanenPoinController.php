@@ -217,8 +217,11 @@ class PanenPoinController extends Controller
             // Filter bulan
             // if ($tanggal) {
                 $date = Carbon::today();
-                $baseQuery->whereMonth('s.created_at', $date->month)
-                        ->whereYear('s.created_at', $date->year);
+                // $baseQuery->whereMonth('s.created_at', $date->month)
+                //         ->whereYear('s.created_at', $date->year);
+                
+                $baseQuery->whereMonth('s.created_at', 3)
+                        ->whereYear('s.created_at', 2026);
             // }
             // Helper mapper
             $mapResult = function ($query) {
