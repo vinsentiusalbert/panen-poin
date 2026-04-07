@@ -29,6 +29,7 @@
                         <th>Hadiah</th>
                         <th>Tanggal Redeem</th>
                         <th>Status</th>
+                        <th>Bukti Kirim</th>
                         <th>Bukti Terima</th>
                         <th>Aksi</th>
                     </tr>
@@ -51,6 +52,15 @@
                                 @endif
                             </td>
                             <td>
+                                @if($row->shipping_proof_path)
+                                    <a class="btn btn-outline-light btn-sm" href="{{ \Illuminate\Support\Facades\Storage::url($row->shipping_proof_path) }}" target="_blank">
+                                        Lihat
+                                    </a>
+                                @else
+                                    <span class="text-muted">Belum ada</span>
+                                @endif
+                            </td>
+                            <td>
                                 @if($row->proof_path)
                                     <a class="btn btn-outline-light btn-sm" href="{{ \Illuminate\Support\Facades\Storage::url($row->proof_path) }}" target="_blank">
                                         Lihat
@@ -61,10 +71,14 @@
                             </td>
                             <td>
                                 @if(!$row->shipped_at)
-                                    <form method="POST" action="{{ route('admin.redeems.ship', $row->id) }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-contact btn-sm">Sudah Dikirim</button>
-                                    </form>
+                                    <button
+                                        type="button"
+                                        class="btn btn-contact btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#shipModal{{ $row->id }}"
+                                    >
+                                        Input Bukti Kirim
+                                    </button>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -72,7 +86,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center text-muted">Belum ada data redeem</td>
+                            <td colspan="11" class="text-center text-muted">Belum ada data redeem</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -80,4 +94,43 @@
         </div>
     </div>
 </div>
+
+@foreach($redeems as $row)
+    @if(!$row->shipped_at)
+        <div class="modal fade" id="shipModal{{ $row->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{{ route('admin.redeems.ship', $row->id) }}" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title">Input Bukti Kirim</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <div class="small text-muted mb-2">
+                                    {{ $row->nama_akun }} - {{ $row->prize_name }}
+                                </div>
+                                <label for="shipping_proof_{{ $row->id }}" class="form-label">Upload bukti kirim</label>
+                                <input
+                                    type="file"
+                                    class="form-control"
+                                    id="shipping_proof_{{ $row->id }}"
+                                    name="shipping_proof"
+                                    accept=".jpg,.jpeg,.png,.pdf"
+                                    required
+                                >
+                                <small class="text-muted">Format: JPG, JPEG, PNG, PDF. Maksimal 5 MB.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-contact">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+@endforeach
 @endsection
