@@ -354,6 +354,7 @@ class PanenPoinController extends Controller
                 'p.name as prize_name',
                 'pr.created_at',
                 'pr.shipped_at',
+                'pr.shipping_proof_path',
                 'pr.proof_path'
             )
             ->orderByDesc('pr.created_at')
@@ -362,18 +363,25 @@ class PanenPoinController extends Controller
         return view('reward.admin_redeems', compact('redeems'));
     }
 
-    public function markRedeemShipped($id)
+    public function markRedeemShipped(Request $request, $id)
     {
         $this->ensureAdminRedeemAccess();
+
+        $request->validate([
+            'shipping_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        $path = $request->file('shipping_proof')->store('redeem_shipping_proofs', 'public');
 
         DB::table('prize_redeems')
             ->where('id', $id)
             ->update([
                 'shipped_at' => now(),
+                'shipping_proof_path' => $path,
                 'updated_at' => now(),
             ]);
 
-        return redirect()->back()->with('success', 'Status dikirim sudah diperbarui.');
+        return redirect()->back()->with('success', 'Status dikirim dan bukti kirim berhasil disimpan.');
     }
 
     public function uploadRedeemProof(Request $request)
