@@ -26,6 +26,7 @@
                         <th>Email</th>
                         <th>Nomor Telp</th>
                         <th>Alamat</th>
+                        <th>Remark</th>
                         <th>Hadiah</th>
                         <th>Tanggal Redeem</th>
                         <th>Status</th>
@@ -42,6 +43,7 @@
                             <td>{{ $row->email_client }}</td>
                             <td>{{ $row->phone }}</td>
                             <td>{{ $row->address }}</td>
+                            <td>{{ $row->remark }}</td>
                             <td>{{ $row->prize_name }}</td>
                             <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d M Y') }}</td>
                             <td>
@@ -86,7 +88,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="text-center text-muted">Belum ada data redeem</td>
+                            <td colspan="12" class="text-center text-muted">Belum ada data redeem</td>
                         </tr>
                     @endforelse
                 </tbody>
