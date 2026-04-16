@@ -18,13 +18,6 @@ body {
 <div class="container my-5">
 @php
     $user = auth()->user();
-    $latestShippingProofUrl = $latestRedeem && $latestRedeem->shipping_proof_path
-        ? asset('storage/'.$latestRedeem->shipping_proof_path)
-        : null;
-    $latestShippingProofExtension = $latestRedeem && $latestRedeem->shipping_proof_path
-        ? strtolower(pathinfo($latestRedeem->shipping_proof_path, PATHINFO_EXTENSION))
-        : null;
-    $latestShippingProofIsImage = in_array($latestShippingProofExtension, ['jpg', 'jpeg', 'png']);
 @endphp
 
 {{-- ================= LIGA ================= --}}
@@ -98,51 +91,11 @@ body {
                     <small class="contact-summary d-block mt-2">
                         Kontak tersimpan: <span>{{ $latestContact->phone }}</span> | <span>{{ $latestContact->address }}</span>
                     </small>
-                    @if($latestRedeem && $latestRedeem->shipped_at)
-                        <div class="shipping-status-card mt-3 text-start mx-auto">
-                            <small class="contact-summary d-block">Hadiah sudah terkirim</small>
-                            <div class="shipping-status-date">
-                                Tanggal kirim:
-                                <span>{{ \Carbon\Carbon::parse($latestRedeem->shipped_at)->format('d M Y') }}</span>
-                            </div>
-                            @if($latestShippingProofUrl)
-                                @if($latestShippingProofIsImage)
-                                    <a href="{{ $latestShippingProofUrl }}" target="_blank" class="shipping-proof-link">
-                                        <img
-                                            src="{{ $latestShippingProofUrl }}"
-                                            alt="Bukti pengiriman hadiah"
-                                            class="shipping-proof-image mt-3"
-                                        >
-                                    </a>
-                                @else
-                                    <a class="btn btn-outline-light btn-sm mt-3" href="{{ $latestShippingProofUrl }}" target="_blank">
-                                        Lihat Bukti Pengiriman
-                                    </a>
-                                @endif
-                            @endif
-                        </div>
+                    @if(!empty($latestContact->remark))
+                        <small class="contact-summary d-block mt-1">
+                            Remark: <span>{{ $latestContact->remark }}</span>
+                        </small>
                     @endif
-                    <div class="mt-3">
-                        @if($latestRedeemProof && $latestRedeemProof->proof_path)
-                            <small class="contact-summary d-block">
-                                Bukti terima sudah diupload.
-                            </small>
-                            <a class="btn btn-outline-light btn-sm mt-2" href="{{ asset('storage/'.$latestRedeemProof->proof_path) }}" target="_blank">
-                                Lihat Bukti
-                            </a>
-                            <form method="POST" action="{{ route('redeem.proof') }}" enctype="multipart/form-data" class="d-flex flex-column align-items-center gap-2 mt-2">
-                                @csrf
-                                <input type="file" name="proof" class="form-control contact-input" accept=".jpg,.jpeg,.png,.pdf" required>
-                                <button type="submit" class="btn btn-contact">Ganti Bukti</button>
-                            </form>
-                        @else
-                            <form method="POST" action="{{ route('redeem.proof') }}" enctype="multipart/form-data" class="d-flex flex-column align-items-center gap-2">
-                                @csrf
-                                <input type="file" name="proof" class="form-control contact-input" accept=".jpg,.jpeg,.png,.pdf" required>
-                                <button type="submit" class="btn btn-contact">Upload Bukti Terima</button>
-                            </form>
-                        @endif
-                    </div>
                 @else
                     <small class="contact-summary d-block mt-2">Belum ada data kontak tersimpan.</small>
                 @endif
@@ -176,6 +129,13 @@ body {
                         ? strtolower(pathinfo($redeem->shipping_proof_path, PATHINFO_EXTENSION))
                         : null;
                     $historyShippingProofIsImage = in_array($historyShippingProofExtension, ['jpg', 'jpeg', 'png']);
+                    $historyReceiveProofUrl = $redeem->proof_path
+                        ? asset('storage/'.$redeem->proof_path)
+                        : null;
+                    $historyReceiveProofExtension = $redeem->proof_path
+                        ? strtolower(pathinfo($redeem->proof_path, PATHINFO_EXTENSION))
+                        : null;
+                    $historyReceiveProofIsImage = in_array($historyReceiveProofExtension, ['jpg', 'jpeg', 'png']);
                 @endphp
                 <div class="col-lg-6">
                     <div class="redeem-history-card h-100">
@@ -203,6 +163,10 @@ body {
                                 <span>Tanggal kirim</span>
                                 <strong>{{ $redeem->shipped_at ? \Carbon\Carbon::parse($redeem->shipped_at)->format('d M Y') : '-' }}</strong>
                             </div>
+                            <div class="redeem-history-line">
+                                <span>Bukti terima</span>
+                                <strong>{{ $redeem->proof_path ? 'Sudah upload' : 'Belum upload' }}</strong>
+                            </div>
                         </div>
 
                         <div class="redeem-history-proof mt-3">
@@ -224,6 +188,36 @@ body {
                             @else
                                 <div class="redeem-history-empty">Bukti kirim belum tersedia.</div>
                             @endif
+                        </div>
+
+                        <div class="redeem-history-proof mt-3">
+                            <div class="redeem-history-proof-title">Bukti terima</div>
+                            @if($historyReceiveProofUrl)
+                                @if($historyReceiveProofIsImage)
+                                    <a href="{{ $historyReceiveProofUrl }}" target="_blank" class="shipping-proof-link">
+                                        <img
+                                            src="{{ $historyReceiveProofUrl }}"
+                                            alt="Bukti terima {{ $redeem->prize_name }}"
+                                            class="shipping-proof-image"
+                                        >
+                                    </a>
+                                @else
+                                    <a class="btn btn-outline-light btn-sm mt-2" href="{{ $historyReceiveProofUrl }}" target="_blank">
+                                        Lihat Bukti Terima
+                                    </a>
+                                @endif
+                            @else
+                                <div class="redeem-history-empty">Bukti terima belum tersedia.</div>
+                            @endif
+
+                            <form method="POST" action="{{ route('redeem.proof') }}" enctype="multipart/form-data" class="d-flex flex-column gap-2 mt-3">
+                                @csrf
+                                <input type="hidden" name="redeem_id" value="{{ $redeem->id }}">
+                                <input type="file" name="proof" class="form-control contact-input" accept=".jpg,.jpeg,.png,.pdf" required>
+                                <button type="submit" class="btn btn-contact btn-sm align-self-start">
+                                    {{ $redeem->proof_path ? 'Ganti Bukti Terima' : 'Upload Bukti Terima' }}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -526,20 +520,9 @@ body {
         @foreach($prizes as $p)
     @php
         $user = auth()->user();
-        $userEmail = $user ? strtolower($user->email ?? $user->email_client ?? '') : '';
         $notLogin = !auth()->check();
-        $notEnoughPoint = !$user || !$point || $point->poin < $p->point;
         $outOfStock = $p->stock <= 0;
         $redeemCount = $redeemCounts[$p->id] ?? 0;
-        $monthlyRedeemLimitReached = ($totalRedeemThisMonth ?? 0) >= ($redeemMonthlyLimit ?? 2);
-        
-       
-        $disableForAllExceptSpecificUser = ($userEmail !== 'a@gmail.com');
-
-        $disabled = !$isRedeemPeriod
-                || $disableForAllExceptSpecificUser || $notLogin || $outOfStock || $notEnoughPoint
-                || $monthlyRedeemLimitReached
-                || $redeemCount > 0; // disable jika sudah redeem hadiah ini di bulan berjalan
         // center jika ganjil
         $centerClass = ($loop->last && $loop->count % 2 == 1) ? 'mx-auto' : '';
     @endphp
@@ -570,31 +553,6 @@ body {
                 </div> --}}
             </div>
 
-            <button
-                type="button"
-                class="btn {{ $redeemCount > 0 ? 'btn-success' : 'btn-warning' }} w-100 mt-3 fw-semibold btn-redeem"
-                data-prize-id="{{ $p->id }}"
-                {{ $disabled ? 'disabled' : '' }}
-            >
-            
-                @if ($redeemCount > 0)
-                    Sudah Diredeem
-                @elseif ($isRedeemEnded)
-                    Berakhir 31 Maret 2026
-                @elseif (!$isRedeemPeriod)
-                    Mulai 1 Maret 2026
-                @elseif ($outOfStock)
-                    Habis
-                @elseif ($monthlyRedeemLimitReached)
-                    Limit
-                @elseif ($notLogin)
-                    Redeem
-                @elseif ($notEnoughPoint)
-                    Poin Tidak Cukup
-                @else
-                    Redeem
-                @endif
-            </button>
         </div>
     </div>
 @endforeach
@@ -611,6 +569,9 @@ body {
 <div class="modal fade contact-modal" id="contactInfoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content contact-modal-content">
+            @php
+                $savedContact = $userContactInfos->first();
+            @endphp
             <div class="modal-header">
                 <h5 class="modal-title">Isi Nomor Telp & Alamat</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -624,6 +585,7 @@ body {
                                name="phone"
                                class="form-control contact-input"
                                placeholder="62xxxxxxxxx"
+                               value="{{ old('phone', $savedContact->phone ?? '') }}"
                                inputmode="numeric"
                                minlength="10"
                                maxlength="14"
@@ -634,7 +596,16 @@ body {
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Alamat</label>
-                        <textarea name="address" class="form-control contact-input" rows="3" required></textarea>
+                        <textarea name="address" class="form-control contact-input" rows="3" required>{{ old('address', $savedContact->address ?? '') }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Remark</label>
+                        <textarea
+                            name="remark"
+                            class="form-control contact-input"
+                            rows="3"
+                            placeholder="Tulis catatan pengiriman atau permintaan khusus"
+                        >{{ old('remark', $savedContact->remark ?? '') }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -692,65 +663,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".scroll-animate").forEach(el => {
         observer.observe(el);
     });
-});
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.btn-redeem').forEach(button => {
-        button.addEventListener('click', function () {
-            const prizeId = this.dataset.prizeId;
-
-            Swal.fire({
-                title: 'Yakin redeem hadiah ini?',
-                text: 'Poin akan langsung dipotong',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Redeem',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#f59e0b',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    redeemPrize(prizeId);
-                }
-            });
-        });
-    });
-
-    function redeemPrize(prizeId) {
-        fetch("{{ route('redeem') }}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                prize_id: prizeId
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: data.message,
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal',
-                    text: data.message,
-                });
-            }
-        })
-        .catch(() => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Terjadi kesalahan sistem',
-            });
-        });
-    }
 });
 
 

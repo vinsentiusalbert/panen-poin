@@ -151,19 +151,6 @@ class PanenPoinController extends Controller
             // true kalau hari ini masih dalam periode redeem
             $isRedeemPeriod = $today->between($redeemStartDate, $redeemEndDate);
             $isRedeemEnded = $today->gt($redeemEndDate);
-            $latestRedeem = $user
-                ? DB::table('prize_redeems')
-                    ->where('user_id', $user->id)
-                    ->orderByDesc('created_at')
-                    ->first()
-                : null;
-            $latestRedeemProof = $user
-                ? DB::table('prize_redeems')
-                    ->where('user_id', $user->id)
-                    ->whereNotNull('proof_path')
-                    ->orderByDesc('created_at')
-                    ->first()
-                : null;
             $userRedeemHistory = $user
                 ? DB::table('prize_redeems as pr')
                     ->join('prizes as p', 'p.id', '=', 'pr.prize_id')
@@ -188,12 +175,7 @@ class PanenPoinController extends Controller
                 'redeemCounts',
                 'totalRedeemThisMonth',
                 'userContactInfos',
-                'redeemMonthlyLimit',
-                'latestRedeem',
-                'latestRedeemProof',
                 'userRedeemHistory',
-                'isRedeemPeriod',
-                'isRedeemEnded'
             ));
                 
         } catch (\Exception $e) {
@@ -369,6 +351,7 @@ class PanenPoinController extends Controller
                 'u.email_client',
                 'uc.phone',
                 'uc.address',
+                'uc.remark',
                 'p.name as prize_name',
                 'pr.created_at',
                 'pr.shipped_at',
@@ -410,21 +393,14 @@ class PanenPoinController extends Controller
         }
 
         $request->validate([
+            'redeem_id' => 'required|integer',
             'proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
-        $latestRedeem = DB::table('prize_redeems')
+        $targetRedeem = DB::table('prize_redeems')
             ->where('user_id', $user->id)
-            ->orderByDesc('created_at')
+            ->where('id', $request->redeem_id)
             ->first();
-
-        $latestRedeemProof = DB::table('prize_redeems')
-            ->where('user_id', $user->id)
-            ->whereNotNull('proof_path')
-            ->orderByDesc('created_at')
-            ->first();
-
-        $targetRedeem = $latestRedeemProof ?? $latestRedeem;
 
         if (!$targetRedeem) {
             return redirect()->back()->with('error', 'Belum ada data redeem.');
@@ -455,8 +431,11 @@ class PanenPoinController extends Controller
                 'u.email_client',
                 'uc.phone',
                 'uc.address',
+                'uc.remark',
                 'p.name as prize_name',
-                'pr.created_at'
+                'pr.created_at',
+                'pr.shipped_at',
+                'pr.proof_path'
             )
             ->orderByDesc('pr.created_at')
             ->get();
@@ -473,8 +452,11 @@ class PanenPoinController extends Controller
         echo '<th>Email</th>';
         echo '<th>Nomor Telp</th>';
         echo '<th>Alamat</th>';
+        echo '<th>Remark</th>';
         echo '<th>Hadiah</th>';
         echo '<th>Tanggal Redeem</th>';
+        echo '<th>Status Kirim</th>';
+        echo '<th>Status Bukti Terima</th>';
         echo '</tr>';
 
         $no = 1;
@@ -485,8 +467,11 @@ class PanenPoinController extends Controller
             echo '<td>' . htmlspecialchars($item->email_client ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td>' . htmlspecialchars($item->phone ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td>' . htmlspecialchars($item->address ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
+            echo '<td>' . htmlspecialchars($item->remark ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td>' . htmlspecialchars($item->prize_name ?? '', ENT_QUOTES, 'UTF-8') . '</td>';
             echo '<td>' . Carbon::parse($item->created_at)->format('d-m-Y') . '</td>';
+            echo '<td>' . ($item->shipped_at ? 'Sudah Terkirim' : 'Belum Terkirim') . '</td>';
+            echo '<td>' . ($item->proof_path ? 'Sudah Upload' : 'Belum Upload') . '</td>';
             echo '</tr>';
         }
 
@@ -766,6 +751,7 @@ class PanenPoinController extends Controller
         $request->validate([
             'phone' => ['required', 'string', 'min:10', 'max:14', 'regex:/^62[0-9]{8,12}$/'],
             'address' => 'required|string|max:255',
+            'remark' => 'nullable|string|max:1000',
         ]);
 
         $user = auth()->user();
@@ -778,6 +764,7 @@ class PanenPoinController extends Controller
             [
                 'phone' => $request->phone,
                 'address' => $request->address,
+                'remark' => $request->remark,
                 'updated_at' => now(),
                 'created_at' => now(),
             ]
