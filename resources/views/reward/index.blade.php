@@ -18,6 +18,13 @@ body {
 <div class="container my-5">
 @php
     $user = auth()->user();
+    $latestShippingProofUrl = $latestRedeem && $latestRedeem->shipping_proof_path
+        ? asset('storage/'.$latestRedeem->shipping_proof_path)
+        : null;
+    $latestShippingProofExtension = $latestRedeem && $latestRedeem->shipping_proof_path
+        ? strtolower(pathinfo($latestRedeem->shipping_proof_path, PATHINFO_EXTENSION))
+        : null;
+    $latestShippingProofIsImage = in_array($latestShippingProofExtension, ['jpg', 'jpeg', 'png']);
 @endphp
 
 {{-- ================= LIGA ================= --}}
@@ -91,12 +98,36 @@ body {
                     <small class="contact-summary d-block mt-2">
                         Kontak tersimpan: <span>{{ $latestContact->phone }}</span> | <span>{{ $latestContact->address }}</span>
                     </small>
+                    @if($latestRedeem && $latestRedeem->shipped_at)
+                        <div class="shipping-status-card mt-3 text-start mx-auto">
+                            <small class="contact-summary d-block">Hadiah sudah terkirim</small>
+                            <div class="shipping-status-date">
+                                Tanggal kirim:
+                                <span>{{ \Carbon\Carbon::parse($latestRedeem->shipped_at)->format('d M Y') }}</span>
+                            </div>
+                            @if($latestShippingProofUrl)
+                                @if($latestShippingProofIsImage)
+                                    <a href="{{ $latestShippingProofUrl }}" target="_blank" class="shipping-proof-link">
+                                        <img
+                                            src="{{ $latestShippingProofUrl }}"
+                                            alt="Bukti pengiriman hadiah"
+                                            class="shipping-proof-image mt-3"
+                                        >
+                                    </a>
+                                @else
+                                    <a class="btn btn-outline-light btn-sm mt-3" href="{{ $latestShippingProofUrl }}" target="_blank">
+                                        Lihat Bukti Pengiriman
+                                    </a>
+                                @endif
+                            @endif
+                        </div>
+                    @endif
                     <div class="mt-3">
                         @if($latestRedeemProof && $latestRedeemProof->proof_path)
                             <small class="contact-summary d-block">
                                 Bukti terima sudah diupload.
                             </small>
-                            <a class="btn btn-outline-light btn-sm mt-2" href="{{ \Illuminate\Support\Facades\Storage::url($latestRedeemProof->proof_path) }}" target="_blank">
+                            <a class="btn btn-outline-light btn-sm mt-2" href="{{ asset('storage/'.$latestRedeemProof->proof_path) }}" target="_blank">
                                 Lihat Bukti
                             </a>
                             <form method="POST" action="{{ route('redeem.proof') }}" enctype="multipart/form-data" class="d-flex flex-column align-items-center gap-2 mt-2">
@@ -123,6 +154,88 @@ body {
 </div>
 
     @endif
+
+@if($user)
+<div class="section-card mb-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-4">
+        <div>
+            <h4 class="mb-1">Riwayat Redeem Saya</h4>
+            <small class="contact-summary">Cek reward yang sudah pernah diredeem dan lihat bukti kirimnya di sini.</small>
+        </div>
+        <span class="history-counter">{{ $userRedeemHistory->count() }} Redeem</span>
+    </div>
+
+    @if($userRedeemHistory->isNotEmpty())
+        <div class="row g-4">
+            @foreach($userRedeemHistory as $redeem)
+                @php
+                    $historyShippingProofUrl = $redeem->shipping_proof_path
+                        ? asset('storage/'.$redeem->shipping_proof_path)
+                        : null;
+                    $historyShippingProofExtension = $redeem->shipping_proof_path
+                        ? strtolower(pathinfo($redeem->shipping_proof_path, PATHINFO_EXTENSION))
+                        : null;
+                    $historyShippingProofIsImage = in_array($historyShippingProofExtension, ['jpg', 'jpeg', 'png']);
+                @endphp
+                <div class="col-lg-6">
+                    <div class="redeem-history-card h-100">
+                        <div class="redeem-history-head">
+                            <div class="redeem-history-prize">
+                                <div class="redeem-history-thumb">
+                                    <img src="{{ asset('img/'.$redeem->prize_image) }}" alt="{{ $redeem->prize_name }}">
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ $redeem->prize_name }}</h5>
+                                    <div class="redeem-history-meta">{{ $redeem->prize_point }} poin</div>
+                                </div>
+                            </div>
+                            <span class="redeem-status-badge {{ $redeem->shipped_at ? 'is-shipped' : 'is-pending' }}">
+                                {{ $redeem->shipped_at ? 'Terkirim' : 'Diproses' }}
+                            </span>
+                        </div>
+
+                        <div class="redeem-history-info">
+                            <div class="redeem-history-line">
+                                <span>Redeem</span>
+                                <strong>{{ \Carbon\Carbon::parse($redeem->created_at)->format('d M Y') }}</strong>
+                            </div>
+                            <div class="redeem-history-line">
+                                <span>Tanggal kirim</span>
+                                <strong>{{ $redeem->shipped_at ? \Carbon\Carbon::parse($redeem->shipped_at)->format('d M Y') : '-' }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="redeem-history-proof mt-3">
+                            <div class="redeem-history-proof-title">Bukti kirim</div>
+                            @if($historyShippingProofUrl)
+                                @if($historyShippingProofIsImage)
+                                    <a href="{{ $historyShippingProofUrl }}" target="_blank" class="shipping-proof-link">
+                                        <img
+                                            src="{{ $historyShippingProofUrl }}"
+                                            alt="Bukti kirim {{ $redeem->prize_name }}"
+                                            class="shipping-proof-image"
+                                        >
+                                    </a>
+                                @else
+                                    <a class="btn btn-outline-light btn-sm mt-2" href="{{ $historyShippingProofUrl }}" target="_blank">
+                                        Lihat Bukti Kirim
+                                    </a>
+                                @endif
+                            @else
+                                <div class="redeem-history-empty">Bukti kirim belum tersedia.</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @else
+        <div class="redeem-history-empty">
+            Belum ada reward yang diredeem.
+        </div>
+    @endif
+</div>
+@endif
 
 {{-- ================= TABLE ================= --}}
 <div class="section-card mb-5">
