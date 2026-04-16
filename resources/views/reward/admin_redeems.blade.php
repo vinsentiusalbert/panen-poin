@@ -53,7 +53,7 @@
                             </td>
                             <td>
                                 @if($row->shipping_proof_path)
-                                    <a class="btn btn-outline-light btn-sm" href="{{ \Illuminate\Support\Facades\Storage::url($row->shipping_proof_path) }}" target="_blank">
+                                    <a class="btn btn-outline-light btn-sm" href="{{ asset('storage/'.$row->shipping_proof_path) }}" target="_blank">
                                         Lihat
                                     </a>
                                 @else
@@ -62,7 +62,7 @@
                             </td>
                             <td>
                                 @if($row->proof_path)
-                                    <a class="btn btn-outline-light btn-sm" href="{{ \Illuminate\Support\Facades\Storage::url($row->proof_path) }}" target="_blank">
+                                    <a class="btn btn-outline-light btn-sm" href="{{ asset('storage/'.$row->proof_path) }}" target="_blank">
                                         Lihat
                                     </a>
                                 @else

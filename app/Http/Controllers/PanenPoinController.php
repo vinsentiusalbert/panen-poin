@@ -164,6 +164,23 @@ class PanenPoinController extends Controller
                     ->orderByDesc('created_at')
                     ->first()
                 : null;
+            $userRedeemHistory = $user
+                ? DB::table('prize_redeems as pr')
+                    ->join('prizes as p', 'p.id', '=', 'pr.prize_id')
+                    ->select(
+                        'pr.id',
+                        'pr.created_at',
+                        'pr.shipped_at',
+                        'pr.shipping_proof_path',
+                        'pr.proof_path',
+                        'p.name as prize_name',
+                        'p.img as prize_image',
+                        'p.point as prize_point'
+                    )
+                    ->where('pr.user_id', $user->id)
+                    ->orderByDesc('pr.created_at')
+                    ->get()
+                : collect();
             return view('reward.index', compact(
                 'data',
                 'point',
@@ -174,6 +191,7 @@ class PanenPoinController extends Controller
                 'redeemMonthlyLimit',
                 'latestRedeem',
                 'latestRedeemProof',
+                'userRedeemHistory',
                 'isRedeemPeriod',
                 'isRedeemEnded'
             ));
